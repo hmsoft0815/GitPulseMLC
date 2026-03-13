@@ -20,7 +20,8 @@ builds:
     binary: gitpulse
     ldflags:
       - -s -w -X main.version={{.Version}}
-    trimpath: true
+    flags:
+      - -trimpath
 
 archives:
   - format: tar.gz
