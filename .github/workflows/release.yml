@@ -2,6 +2,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch: # Allows manual triggering from GitHub UI
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
