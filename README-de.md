@@ -22,15 +22,15 @@ GitPulseMLC ist ein performantes Go-basiertes Dashboard zur Überwachung einer V
 
 ---
 
-## 📦 Nutzung als Go-Bibliothek
+## 🛠️ Entwickler-Fokus: Nutze die Core-Library in deinen eigenen Projekten
 
-GitPulseMLC ist modular aufgebaut. Die Scanning-Engine kann in eigenen Go-Projekten verwendet werden:
+GitPulseMLC ist modular aufgebaut. Die leistungsstarke Scanning-Engine kann nahtlos in eigene Dashboards, CI-Scripte oder Hintergrunddienste integriert werden:
 
 ```bash
 go get github.com/hmsoft0815/GitPulseMLC
 ```
 
-Detaillierte Beispiele zur Integration findest du in der [Bibliotheks-Dokumentation](docs/LIBRARY.md).
+Detaillierte Beispiele zur Integration und API-Nutzung findest du in der **[Bibliotheks-Dokumentation](docs/LIBRARY.md)**.
 
 ---
 
@@ -74,12 +74,6 @@ Detaillierte Beispiele zur Integration findest du in der [Bibliotheks-Dokumentat
 ./gitpulse --version # Zeigt Versionsinformationen
 ./gitpulse --help    # Zeigt alle verfügbaren Optionen
 ```
-
-### Config-Suchreihenfolge
-1.  `--config` Flag
-2.  `GITPULSE_CONFIG` Umgebungsvariable
-3.  `config/repos.ini` (aktuelles Verzeichnis)
-4.  `~/.gitpulsemlc/repos.ini` (Benutzerverzeichnis)
 
 ---
 
