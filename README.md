@@ -6,7 +6,7 @@ Keep track of all your projects – fast, safe, and directly in your terminal.
 
 ---
 
-## 🇺🇸 Overview
+## Overview
 
 GitPulseMLC is a high-performance Go-based dashboard designed to monitor a large number of local Git repositories. It provides a centralized view of your development environment, ensuring you never lose track of uncommitted changes or unpushed branches across multiple projects.
 
