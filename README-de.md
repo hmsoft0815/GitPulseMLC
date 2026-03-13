@@ -1,6 +1,6 @@
 # GitPulseMLC
 
-**Überwache den Herzschlag deiner lokalen Git-Repositories.**
+**Überwache alle  deine lokalen Git-Repositories.**
 
 Behalte den Überblick über alle deine Projekte – schnell, sicher und direkt im Terminal.
 
@@ -8,7 +8,7 @@ Behalte den Überblick über alle deine Projekte – schnell, sicher und direkt 
 
 ## 🇩🇪 Zusammenfassung
 
-GitPulseMLC ist ein performantes Go-basiertes Dashboard zur Überwachung einer Vielzahl lokaler Git-Repositories. Es wurde entwickelt, um Entwicklern, die an vielen Projekten gleichzeitig arbeiten, eine schnelle Antwort auf die täglichen Fragen zu geben: Habe ich irgendwo vergessen zu pushen? Liegen noch ungespeicherte Änderungen in einem alten Branch? Sind meine lokalen Repositories auf dem Stand des Servers?
+GitPulseMLC ist ein   Go-basiertes Dashboard zur Überwachung einer Vielzahl lokaler Git-Repositories. Es wurde entwickelt, um Entwicklern, die an vielen Projekten gleichzeitig arbeiten, eine schnelle Antwort auf die täglichen Fragen zu geben: Habe ich irgendwo vergessen zu pushen? Liegen noch ungespeicherte Änderungen in einem alten Branch? Sind meine lokalen Repositories auf dem Stand des Servers?
 
 ### Kern-Features
 *   **Blitzschnell**: Nutzt Go-Concurrency, um hunderte Repositories in Sekunden zu scannen.
