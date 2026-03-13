@@ -1,4 +1,4 @@
-# GitPulseMLC
+# GitPulseMLC 📡
 
 **Monitor the heartbeat of your local Git repositories.**
 
@@ -23,7 +23,19 @@ GitPulseMLC is a high-performance Go-based dashboard designed to monitor a large
 
 ---
 
-## Installation & Usage
+## 📦 Go Library Usage
+
+GitPulseMLC is built as a modular Go library. You can use the scanning engine in your own Go projects:
+
+```bash
+go get github.com/hmsoft0815/GitPulseMLC
+```
+
+For detailed integration examples, see [Go Library Documentation](docs/LIBRARY.md).
+
+---
+
+## 🚀 Installation & Usage
 
 ### Prerequisites
 *   Go 1.25+
@@ -72,11 +84,10 @@ GitPulseMLC is a high-performance Go-based dashboard designed to monitor a large
 
 ---
 
-##  Motivation & Credits
+## 💡 Motivation & Credits
 
 ### Why GitPulseMLC?
 Managing 20+ active repositories on a local server or dev machine often leads to "forgotten" commits or outdated local branches. Existing GUI tools are often too heavy or require manual clicking. GitPulseMLC was built to provide a "Single Source of Truth" that is as fast as `ls` but as informative as `git status`.
-You can even setup a cron job that will send you an overview daily (see html output option)
 
 ### Credits
 *   **Engine**: Built with the excellent [go-git](https://github.com/go-git/go-git) library.
@@ -85,7 +96,7 @@ You can even setup a cron job that will send you an overview daily (see html out
 
 ---
 
-##  License
+## ⚖️ License
 
 Copyright (c) 2026 Michael Lechner.
 This project is licensed under the MIT License - see the `LICENSE` file for details.

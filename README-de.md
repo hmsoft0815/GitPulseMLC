@@ -1,6 +1,6 @@
 # GitPulseMLC
 
-**Überwache alle  deine lokalen Git-Repositories.**
+**Überwache den Herzschlag deiner lokalen Git-Repositories.**
 
 Behalte den Überblick über alle deine Projekte – schnell, sicher und direkt im Terminal.
 
@@ -8,7 +8,7 @@ Behalte den Überblick über alle deine Projekte – schnell, sicher und direkt 
 
 ## 🇩🇪 Zusammenfassung
 
-GitPulseMLC ist ein   Go-basiertes Dashboard zur Überwachung einer Vielzahl lokaler Git-Repositories. Es wurde entwickelt, um Entwicklern, die an vielen Projekten gleichzeitig arbeiten, eine schnelle Antwort auf die täglichen Fragen zu geben: Habe ich irgendwo vergessen zu pushen? Liegen noch ungespeicherte Änderungen in einem alten Branch? Sind meine lokalen Repositories auf dem Stand des Servers?
+GitPulseMLC ist ein performantes Go-basiertes Dashboard zur Überwachung einer Vielzahl lokaler Git-Repositories. Es wurde entwickelt, um Entwicklern, die an vielen Projekten gleichzeitig arbeiten, eine schnelle Antwort auf die täglichen Fragen zu geben: Habe ich irgendwo vergessen zu pushen? Liegen noch ungespeicherte Änderungen in einem alten Branch? Sind meine lokalen Repositories auf dem Stand des Servers?
 
 ### Kern-Features
 *   **Blitzschnell**: Nutzt Go-Concurrency, um hunderte Repositories in Sekunden zu scannen.
@@ -19,6 +19,18 @@ GitPulseMLC ist ein   Go-basiertes Dashboard zur Überwachung einer Vielzahl lok
 *   **Kompakt-Modus**: Blendet auf Wunsch alle "sauberen" Repos aus, um den Fokus auf Arbeit zu lenken.
 *   **Pfad-Kürzung**: Konfigurierbare Ersetzung von Pfad-Präfixen, um die Anzeige auch bei tiefen Verzeichnisstrukturen übersichtlich zu halten.
 *   **Flexible Konfiguration**: Intelligente Suche nach der Konfigurationsdatei (lokal, Home-Verzeichnis oder via Flag).
+
+---
+
+## 📦 Nutzung als Go-Bibliothek
+
+GitPulseMLC ist modular aufgebaut. Die Scanning-Engine kann in eigenen Go-Projekten verwendet werden:
+
+```bash
+go get github.com/hmsoft0815/GitPulseMLC
+```
+
+Detaillierte Beispiele zur Integration findest du in der [Bibliotheks-Dokumentation](docs/LIBRARY.md).
 
 ---
 
