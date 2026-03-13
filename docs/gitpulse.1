@@ -1,0 +1,79 @@
+.TH GITPULSE 1 "March 2026" "1.1.0" "GitPulseMLC Manual"
+.SH NAME
+gitpulse \- Monitor the heartbeat of local Git repositories
+.SH SYNOPSIS
+.B gitpulse
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+.B gitpulse
+is a high-performance dashboard designed to monitor a large number of local Git repositories simultaneously. It provides a centralized view of your development environment, ensuring you never lose track of uncommitted changes, unpushed branches, or stale worktrees.
+.PP
+The tool operates on a "Read-Only" principle, meaning it does not modify any files or perform network operations unless explicitly configured to do so (e.g., it reads .git/FETCH_HEAD to determine the last fetch time).
+.SH OPTIONS
+.TP
+.BR \-v ", " \-\-all
+Enable verbose mode. Displays details for all local branches, including ahead/behind counts relative to their tracking branches, and information about active stashes.
+.TP
+.B \-\-compact
+Enable compact mode. Only repositories that require action (dirty state, ahead/behind commits, or stashes) will be displayed. Clean repositories are hidden.
+.TP
+.B \-\-progress
+Show a real-time scanning progress indicator on stderr. Only applicable in TUI mode.
+.TP
+.B \-\-html
+Output results as a standalone, high-contrast HTML report. Useful for generating automated status emails.
+.TP
+.B \-\-json
+Output results in JSON format for programmatic processing or data export.
+.TP
+.B \-\-no-color
+Disable ANSI color output and use plain text. Also affects HTML output.
+.TP
+.B \-\-version
+Print the version information and exit.
+.TP
+.B \-\-help
+Print a summary of command-line options and exit.
+.SH CONFIGURATION
+The tool looks for a configuration file named \fBrepos.ini\fR. It searches in the following order:
+1. Path provided via \fB--config\fR flag.
+2. Path in \fBGITPULSE_CONFIG\fR environment variable.
+3. \fBconfig/repos.ini\fR in the current directory.
+4. \fB~/.gitpulsemlc/repos.ini\fR in the user's home directory.
+.PP
+.B [projects]
+.br
+This section maps project names to their absolute filesystem paths.
+.br
+Example: \fImy-app = /mnt/data2tb/dev/my-app\fR
+.PP
+.B [general]
+.br
+\fBreplace_path_prefix\fR: A filesystem prefix to be replaced in the output (e.g., /mnt/data2tb).
+.br
+\fBreplace_with\fR: The replacement string (e.g., "@").
+.PP
+.B [settings]
+.br
+\fBcolumn_name_width\fR: Minimum width for the project name column (default: 25).
+.br
+\fBshow_summary\fR: Boolean to toggle the final summary block (default: true).
+.br
+\fBcompact_mode\fR: Boolean to enable compact mode by default (default: false).
+.SH FILES
+.TP
+.I config/repos.ini
+The primary configuration file containing the list of repositories to monitor.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+A fatal error occurred (e.g., config file not found or unreadable).
+.SH AUTHOR
+Michael Lechner
+.SH COPYRIGHT
+Copyright (c) 2026 Michael Lechner. Licensed under the MIT License.
+.SH SEE ALSO
+.BR git (1)

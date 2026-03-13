@@ -1,0 +1,17 @@
+# Binaries
+bin/
+dist/
+
+# local stuff
+config/repos.ini
+progress.md
+
+# Dependencies
+vendor/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store

@@ -1,0 +1,29 @@
+# GitPulseMLC Configuration Example
+
+[projects]
+# Format: Project Name = Absolute Filesystem Path
+# GitPulseMLC will warn if the path ends in '.git' and automatically adjust.
+gitpulse = /mnt/data2tb/dev/gitpulsemlc
+my-website = /mnt/data2tb/www/personal-site
+backend-api = /mnt/data2tb/api/core-service
+
+[general]
+# Optional: Shorten deep paths in the output
+# This will replace "/mnt/data2tb" with "@" in the TUI and reports.
+replace_path_prefix = /mnt/data2tb
+replace_with = "@"
+
+[settings]
+# Minimum width for the NAME column (default: 25)
+column_name_width = 30
+
+# Show the final summary block (default: true)
+show_summary = true
+
+# Only show repositories that need action (default: false)
+# Action required = Dirty state, Ahead/Behind commits, or Stashes.
+compact_mode = false
+
+[disabled_projects]
+# Projects in this section are ignored by the scanner
+# old-tool = /mnt/data2tb/dev/old-tool

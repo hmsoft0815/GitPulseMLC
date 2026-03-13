@@ -1,0 +1,186 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GitPulseMLC Output Schema",
+  "description": "JSON schema for the output of gitpulse --json",
+  "type": "object",
+  "required": [
+    "version",
+    "summary",
+    "results"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Application version"
+    },
+    "summary": {
+      "$ref": "#/definitions/Summary"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/RepoStatus"
+      }
+    }
+  },
+  "definitions": {
+    "Summary": {
+      "type": "object",
+      "required": [
+        "total",
+        "dirty",
+        "ahead",
+        "behind",
+        "errors"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer"
+        },
+        "dirty": {
+          "type": "integer"
+        },
+        "ahead": {
+          "type": "integer"
+        },
+        "behind": {
+          "type": "integer"
+        },
+        "errors": {
+          "type": "integer"
+        }
+      }
+    },
+    "RepoStatus": {
+      "type": "object",
+      "required": [
+        "name",
+        "path",
+        "current_branch",
+        "is_clean"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "current_branch": {
+          "type": "string"
+        },
+        "last_commit_id": {
+          "type": "string"
+        },
+        "last_commit_msg": {
+          "type": "string"
+        },
+        "last_commit_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "is_clean": {
+          "type": "boolean"
+        },
+        "modified_count": {
+          "type": "integer"
+        },
+        "untracked_count": {
+          "type": "integer"
+        },
+        "deleted_count": {
+          "type": "integer"
+        },
+        "stash_count": {
+          "type": "integer"
+        },
+        "changed_files": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "remote_url": {
+          "type": "string"
+        },
+        "remote_branch_name": {
+          "type": "string"
+        },
+        "is_tracking": {
+          "type": "boolean"
+        },
+        "ahead": {
+          "type": "integer"
+        },
+        "behind": {
+          "type": "integer"
+        },
+        "incoming_commits": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "is_diverged": {
+          "type": "boolean"
+        },
+        "last_fetch_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "has_remote_updates": {
+          "type": "boolean"
+        },
+        "in_merge_conflict": {
+          "type": "boolean"
+        },
+        "has_no_remote": {
+          "type": "boolean"
+        },
+        "main_language": {
+          "type": "string"
+        },
+        "local_branches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BranchInfo"
+          }
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "BranchInfo": {
+      "type": "object",
+      "required": [
+        "name",
+        "is_head",
+        "ahead",
+        "behind",
+        "is_stale"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "is_head": {
+          "type": "boolean"
+        },
+        "ahead": {
+          "type": "integer"
+        },
+        "behind": {
+          "type": "integer"
+        },
+        "last_commit_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "is_stale": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

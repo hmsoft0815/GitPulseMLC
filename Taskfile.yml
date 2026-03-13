@@ -1,0 +1,53 @@
+version: '3'
+
+vars:
+  VERSION: 1.1.0
+  LDFLAGS: -s -w -X main.version={{.VERSION}}
+
+tasks:
+  build:
+    desc: Build all binaries
+    cmds:
+      - mkdir -p bin
+      - go build -o bin/tui ./cmd/tui
+
+  run:
+    desc: Run the TUI application
+    cmds:
+      - go run ./cmd/tui {{.CLI_ARGS}}
+
+  run-verbose:
+    desc: Run the TUI application with all details enabled
+    cmds:
+      - go run ./cmd/tui -v --all {{.CLI_ARGS}}
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./...
+
+  tidy:
+    desc: Tidy go.mod
+    cmds:
+      - go mod tidy
+
+  clean:
+    desc: Clean binaries and dist folder
+    cmds:
+      - rm -rf bin dist
+
+  release:
+    desc: Prepare an optimized release package in the dist folder
+    cmds:
+      - task: clean
+      - mkdir -p bin
+      - echo "Building optimized binary for version {{.VERSION}}..."
+      - go build -ldflags="{{.LDFLAGS}}" -trimpath -o bin/tui ./cmd/tui
+      - rm -rf dist
+      - mkdir -p dist/man
+      - cp bin/tui dist/gitpulse
+      - cp docs/gitpulse.1 dist/man/
+      - cp README.md README-de.md LICENSE dist/
+      - mkdir -p dist/config && cp config/repos.ini.example dist/config/
+      - mkdir -p dist/docs && cp docs/json_schema.md docs/schema.json dist/docs/
+      - echo "Release prepared in ./dist folder"
