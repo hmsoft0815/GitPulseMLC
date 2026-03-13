@@ -75,6 +75,9 @@ Detaillierte Beispiele zur Integration und API-Nutzung findest du in der **[Bibl
 ./gitpulse --help    # Zeigt alle verfügbaren Optionen
 ```
 
+> [!IMPORTANT]
+> **⚠️ Hinweis für Windows-Nutzer**: Der Windows Defender oder andere Virenscanner können die Ausführung der kompilierten Binary blockieren, da diese nicht signiert ist und viele Dateizugriffe gleichzeitig ausführt. In diesem Fall muss eine Ausnahme für die `gitpulse.exe` oder das entsprechende Verzeichnis im Virenscanner hinzugefügt werden.
+
 ---
 
 ## Motivation & Credits
