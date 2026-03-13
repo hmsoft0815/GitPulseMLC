@@ -22,7 +22,7 @@ GitPulseMLC ist ein performantes Go-basiertes Dashboard zur Überwachung einer V
 
 ---
 
-## 🛠️ Entwickler-Fokus: Nutze die Core-Library in deinen eigenen Projekten
+## Entwickler-Fokus: Nutze die Core-Library in deinen eigenen Projekten
 
 GitPulseMLC ist modular aufgebaut. Die leistungsstarke Scanning-Engine kann nahtlos in eigene Dashboards, CI-Scripte oder Hintergrunddienste integriert werden:
 

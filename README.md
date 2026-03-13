@@ -1,4 +1,4 @@
-# GitPulseMLC 📡
+# GitPulseMLC
 
 **Monitor the heartbeat of your local Git repositories.**
 
@@ -35,7 +35,7 @@ For detailed integration examples, see [Go Library Documentation](docs/LIBRARY.m
 
 ---
 
-## 🚀 Installation & Usage
+## Installation & Usage
 
 ### Prerequisites
 *   Go 1.25+
@@ -84,7 +84,7 @@ For detailed integration examples, see [Go Library Documentation](docs/LIBRARY.m
 
 ---
 
-## 💡 Motivation & Credits
+## Motivation & Credits
 
 ### Why GitPulseMLC?
 Managing 20+ active repositories on a local server or dev machine often leads to "forgotten" commits or outdated local branches. Existing GUI tools are often too heavy or require manual clicking. GitPulseMLC was built to provide a "Single Source of Truth" that is as fast as `ls` but as informative as `git status`.
