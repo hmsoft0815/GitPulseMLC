@@ -9,6 +9,9 @@ gitpulse \- Monitor the heartbeat of local Git repositories
 is a high-performance dashboard designed to monitor a large number of local Git repositories simultaneously. It provides a centralized view of your development environment, ensuring you never lose track of uncommitted changes, unpushed branches, or stale worktrees.
 .PP
 The tool operates on a "Read-Only" principle, meaning it does not modify any files or perform network operations unless explicitly configured to do so (e.g., it reads .git/FETCH_HEAD to determine the last fetch time).
+.PP
+.B Note for Windows Users:
+Windows Defender or other antivirus tools might flag the generated binary as suspicious because it is unsigned and performs concurrent file system scans. If execution is blocked, you may need to add an exclusion for the binary or its directory.
 .SH OPTIONS
 .TP
 .BR \-v ", " \-\-all

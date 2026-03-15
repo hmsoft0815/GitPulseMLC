@@ -11,6 +11,9 @@ gitpulse - Monitor the heartbeat of local Git repositories
 
 The tool operates on a "Read-Only" principle, meaning it does not modify any files or perform network operations unless explicitly configured to do so.
 
+**Note for Windows Users:**
+Windows Defender or other antivirus tools might flag the generated binary as suspicious because it is unsigned and performs concurrent file system scans. If execution is blocked, you may need to add an exclusion for the binary or its directory.
+
 ## OPTIONS
 *   **-v, --all**: Enable verbose mode. Displays details for all local branches and active stashes.
 *   **--compact**: Enable compact mode. Only repositories that require action are displayed.
