@@ -4,12 +4,26 @@
 VERSION=1.1.0
 LDFLAGS=-s -w -X main.version=$(VERSION)
 
-.PHONY: build run run-verbose test tidy clean release help
+.PHONY: build build-remote build-cross run run-verbose test tidy clean release help
 
 # Build all binaries (standard)
 build:
 	@mkdir -p bin
 	go build -o bin/tui ./cmd/tui
+
+# Build the remote execution utility
+build-remote:
+	@mkdir -p bin
+	go build -o bin/remote_gitpulse ./cmd/remote
+
+# Build cross-compiled binaries for remote execution
+build-cross:
+	@mkdir -p bin
+	GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -o bin/gitpulse-linux-amd64 ./cmd/tui
+	GOOS=linux GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o bin/gitpulse-linux-arm64 ./cmd/tui
+	GOOS=darwin GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -o bin/gitpulse-darwin-amd64 ./cmd/tui
+	GOOS=darwin GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o bin/gitpulse-darwin-arm64 ./cmd/tui
+	GOOS=windows GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -o bin/gitpulse-windows-amd64.exe ./cmd/tui
 
 # Run the TUI application
 run:
@@ -51,6 +65,8 @@ help:
 	@echo ""
 	@echo "Usage:"
 	@echo "  make build         Build all binaries"
+	@echo "  make build-remote  Build the remote execution utility"
+	@echo "  make build-cross   Build cross-compiled binaries"
 	@echo "  make run           Run the TUI application (use ARGS=\"--flag\" for options)"
 	@echo "  make run-verbose   Run the TUI with -v and --all enabled"
 	@echo "  make test          Run all tests"
