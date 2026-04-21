@@ -57,7 +57,7 @@ func main() {
 	showProgress := flag.Bool("progress", false, "Show scanning progress (TUI mode only)")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "GitPulseMLC 📡 - Monitor the heartbeat of your local Git repositories\n\n")
+		fmt.Fprintf(os.Stderr, "GitPulseMLC  - Monitor the heartbeat of your local Git repositories\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
 		fmt.Fprintf(os.Stderr, "  gitpulse [flags]\n\n")
 		fmt.Fprintf(os.Stderr, "Flags:\n")

@@ -18,11 +18,27 @@ GitPulseMLC ist ein performantes Go-basiertes Dashboard zur Überwachung einer V
 *   **Aufräum-Hilfe**: Markiert "Stale Branches" (ältestes Commit > 30 Tage) automatisch.
 *   **Kompakt-Modus**: Blendet auf Wunsch alle "sauberen" Repos aus, um den Fokus auf Arbeit zu lenken.
 *   **Pfad-Kürzung**: Konfigurierbare Ersetzung von Pfad-Präfixen, um die Anzeige auch bei tiefen Verzeichnisstrukturen übersichtlich zu halten.
+*   **Remote-Monitoring**: Überwache Repositories auf einem entfernten Server via SSH mit dem `remote_gitpulse` Tool.
 *   **Flexible Konfiguration**: Intelligente Suche nach der Konfigurationsdatei (lokal, Home-Verzeichnis oder via Flag).
 
 ---
 
-## Entwickler-Fokus: Nutze die Core-Library in deinen eigenen Projekten
+## 🛰️ Remote Monitoring
+
+Repositories auf einem entfernten Server (macOS oder Linux) können mit dem `remote_gitpulse` Utility überwacht werden. Das Tool übernimmt automatisch das Kopieren der korrekten Binary und Konfiguration via SSH.
+
+### Nutzung
+```bash
+# 1. Erstelle die notwendigen Binaries
+make build-remote build-cross
+
+# 2. Starte den Remote-Scanner
+./bin/remote_gitpulse -host user@remote-server -config local-repos.ini -arch linux-amd64
+```
+
+---
+
+## 🛠️ Entwickler-Fokus: Nutze die Core-Library in deinen eigenen Projekten
 
 GitPulseMLC ist modular aufgebaut. Die leistungsstarke Scanning-Engine kann nahtlos in eigene Dashboards, CI-Scripte oder Hintergrunddienste integriert werden:
 
