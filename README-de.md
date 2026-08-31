@@ -1,5 +1,8 @@
 # GitPulseMLC
 
+> **[mlcgo.eu](https://mlcgo.eu)** — Werkzeuge, Bibliotheken und Handbücher · [Produktseite](https://mlcgo.eu/products/gitpulse/)
+
+
 **Überwache den Herzschlag deiner lokalen Git-Repositories.**
 
 Behalte den Überblick über alle deine Projekte – schnell, sicher und direkt im Terminal.
