@@ -115,3 +115,8 @@ Das Verwalten von 20+ aktiven Repositories auf einem lokalen Server oder einer W
 
 Copyright (c) 2026 Michael Lechner.
 Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die Datei `LICENSE` für Details.
+
+<!-- mlcai-private -->
+## Projektdokumentation (`.mlcai/`)
+
+`.mlcai/` ist ein **privates Git-Submodul**: interne Planung, Backlog und Arbeitsnotizen, gepflegt mit dem MLC Doc Hub. Es ist nicht öffentlich zugänglich — **ohne** `--recurse-submodules` klonen; für den Build wird es nicht gebraucht. Links nach `.mlcai/` funktionieren nur mit Zugriff (`git submodule update --init .mlcai`).
