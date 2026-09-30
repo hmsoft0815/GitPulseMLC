@@ -15,3 +15,6 @@ vendor/
 
 # OS
 .DS_Store
+
+# lokale MCP-Konfiguration (dochub-cli agent-rules)
+.mcp.json
