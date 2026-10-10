@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"gitpulsemcl/pkg/config"
-	"gitpulsemcl/pkg/gitmonitor"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/config"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
 )
 
 func ShortenPath(path string, prefix string, replacement string) string {
@@ -22,6 +22,7 @@ func ShortenPath(path string, prefix string, replacement string) string {
 	}
 	return path
 }
+
 // HTML Output for eMails etc. -optionally  no colors, but basic formatting and a summary box at the end.
 func HTML(version string, results []*gitmonitor.RepoStatus, summary gitmonitor.Summary, colored bool, settings config.Settings) {
 	now := time.Now().Format("2006-01-02 15:04:05")
@@ -67,9 +68,13 @@ func HTML(version string, results []*gitmonitor.RepoStatus, summary gitmonitor.S
 			if len(s.ChangedFiles) > 0 {
 				var parts []string
 				keys := make([]string, 0, len(s.ChangedFiles))
-				for k := range s.ChangedFiles { keys = append(keys, k) }
+				for k := range s.ChangedFiles {
+					keys = append(keys, k)
+				}
 				sort.Strings(keys)
-				for _, k := range keys { parts = append(parts, fmt.Sprintf("%d%s", s.ChangedFiles[k], k)) }
+				for _, k := range keys {
+					parts = append(parts, fmt.Sprintf("%d%s", s.ChangedFiles[k], k))
+				}
 				statusText += fmt.Sprintf(" (%s)", strings.Join(parts, ", "))
 			}
 		}

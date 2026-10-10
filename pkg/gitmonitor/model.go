@@ -61,7 +61,7 @@ type RepoStatus struct {
 	HasNoRemote     bool `json:"has_no_remote"`     // True if the repository exists only locally.
 
 	// --- Metadaten für UI ---
-	MainLanguage string `json:"main_language"` // Primary programming language (optional).
-	Error        error  `json:"-"`             // Any error that occurred during scanning (e.g., not a git repo).
+	MainLanguage string `json:"main_language"`   // Primary programming language (optional).
+	Error        error  `json:"-"`               // Any error that occurred during scanning (e.g., not a git repo).
 	ErrorMsg     string `json:"error,omitempty"` // String representation of the error for JSON output.
 }

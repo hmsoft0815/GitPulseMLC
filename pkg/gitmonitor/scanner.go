@@ -266,7 +266,7 @@ func (s *scanner) countStashes(repo *git.Repository) int {
 		return 0
 	}
 
-	// Currently returns 1 if any stashes exist. 
+	// Currently returns 1 if any stashes exist.
 	// Full counting would require low-level reflog traversal.
 	return 1
 }

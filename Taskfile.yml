@@ -1,69 +1,76 @@
 version: '3'
 
 vars:
-  VERSION: 1.1.0
+  VERSION:
+    sh: cat VERSION
   LDFLAGS: -s -w -X main.version={{.VERSION}}
 
 tasks:
+  default:
+    desc: List all tasks
+    cmds:
+      - task --list
+    silent: true
+
   build:
-    desc: Build all binaries
+    desc: Build bin/gitpulse with the version from VERSION
     cmds:
-      - mkdir -p bin
-      - go build -o bin/tui ./cmd/tui
+      - go build -ldflags="{{.LDFLAGS}}" -trimpath -o bin/gitpulse{{exeExt}} ./cmd/gitpulse
+      - ./bin/gitpulse{{exeExt}} --version
 
-  build-remote:
-    desc: Build the remote execution utility
+  build:remote:
+    desc: Build the remote execution utility (bin/remote_gitpulse)
     cmds:
-      - mkdir -p bin
-      - go build -o bin/remote_gitpulse ./cmd/remote
+      - go build -ldflags="{{.LDFLAGS}}" -o bin/remote_gitpulse{{exeExt}} ./cmd/remote
 
-  build-cross:
-    desc: Build cross-compiled binaries for remote execution
+  build:cross:
+    desc: Cross-compile gitpulse for all platforms into bin/ (used by remote_gitpulse)
     cmds:
-      - mkdir -p bin
-      - GOOS=linux GOARCH=amd64 go build -ldflags="{{.LDFLAGS}}" -o bin/gitpulse-linux-amd64 ./cmd/tui
-      - GOOS=linux GOARCH=arm64 go build -ldflags="{{.LDFLAGS}}" -o bin/gitpulse-linux-arm64 ./cmd/tui
-      - GOOS=darwin GOARCH=amd64 go build -ldflags="{{.LDFLAGS}}" -o bin/gitpulse-darwin-amd64 ./cmd/tui
-      - GOOS=darwin GOARCH=arm64 go build -ldflags="{{.LDFLAGS}}" -o bin/gitpulse-darwin-arm64 ./cmd/tui
-      - GOOS=windows GOARCH=amd64 go build -ldflags="{{.LDFLAGS}}" -o bin/gitpulse-windows-amd64.exe ./cmd/tui
+      - for: [linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64]
+        cmd: >-
+          GOOS={{splitList "/" .ITEM | first}} GOARCH={{splitList "/" .ITEM | last}}
+          go build -ldflags="{{.LDFLAGS}}" -trimpath
+          -o bin/gitpulse-{{splitList "/" .ITEM | first}}-{{splitList "/" .ITEM | last}}{{if hasPrefix "windows" .ITEM}}.exe{{end}}
+          ./cmd/gitpulse
 
-  run:
-    desc: Run the TUI application
+  dev:
+    desc: Run gitpulse from source (task dev -- --compact)
     cmds:
-      - go run ./cmd/tui {{.CLI_ARGS}}
-
-  run-verbose:
-    desc: Run the TUI application with all details enabled
-    cmds:
-      - go run ./cmd/tui -v --all {{.CLI_ARGS}}
+      - go run ./cmd/gitpulse {{.CLI_ARGS}}
 
   test:
     desc: Run all tests
     cmds:
       - go test ./...
 
+  lint:
+    desc: Check formatting and run go vet
+    cmds:
+      - test -z "$(gofmt -l cmd internal pkg)" || (gofmt -l cmd internal pkg && exit 1)
+      - go vet ./...
+
+  vuln:
+    desc: Check dependencies and the Go toolchain for known vulnerabilities
+    preconditions:
+      - sh: command -v govulncheck
+        msg: "govulncheck missing: go install golang.org/x/vuln/cmd/govulncheck@latest"
+    cmds:
+      - govulncheck ./...
+
   tidy:
     desc: Tidy go.mod
     cmds:
       - go mod tidy
 
+  release:snapshot:
+    desc: Build all release archives and packages locally into dist/ (no upload)
+    preconditions:
+      - sh: command -v goreleaser
+        msg: "goreleaser missing: https://goreleaser.com/install/"
+    cmds:
+      - goreleaser release --snapshot --clean
+
   clean:
-    desc: Clean binaries and dist folder
+    desc: Remove bin/ and dist/
     cmds:
       - rm -rf bin dist
-
-  release:
-    desc: Prepare an optimized release package in the dist folder
-    cmds:
-      - task: clean
-      - mkdir -p bin
-      - echo "Building optimized binary for version {{.VERSION}}..."
-      - go build -ldflags="{{.LDFLAGS}}" -trimpath -o bin/tui ./cmd/tui
-      - rm -rf dist
-      - mkdir -p dist/man
-      - cp bin/tui dist/gitpulse
-      - cp docs/gitpulse.1 dist/man/
-      - cp README.md README-de.md LICENSE dist/
-      - mkdir -p dist/config && cp config/repos.ini.example dist/config/
-      - mkdir -p dist/docs && cp docs/json_schema.md docs/schema.json dist/docs/
-      - echo "Release prepared in ./dist folder"

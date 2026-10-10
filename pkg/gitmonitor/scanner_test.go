@@ -25,13 +25,13 @@ func TestScanner_ScanRepo_InMemory(t *testing.T) {
 	}
 
 	wt, _ := repo.Worktree()
-	
+
 	// Create initial commit
 	file, _ := fs.Create("main.go")
 	file.Write([]byte("package main"))
 	file.Close()
 	wt.Add("main.go")
-	
+
 	sig := &object.Signature{
 		Name:  "Test User",
 		Email: "test@example.com",
@@ -42,7 +42,7 @@ func TestScanner_ScanRepo_InMemory(t *testing.T) {
 	// 2. Test Scanner Logic
 	s := &scanner{}
 	status := &RepoStatus{Name: "test-memory", Path: ""}
-	
+
 	res, err := s.scanRepo(status, repo)
 	if err != nil {
 		t.Fatalf("scanRepo failed: %v", err)
@@ -65,7 +65,7 @@ func TestScanner_ScanRepo_InMemory(t *testing.T) {
 	file.Write([]byte("dirty content"))
 	file.Close()
 	// No wt.Add() -> Untracked
-	
+
 	res, _ = s.scanRepo(status, repo)
 	if res.IsClean {
 		t.Errorf("expected repo to be dirty (untracked files)")
@@ -87,14 +87,14 @@ func TestScanner_Staleness(t *testing.T) {
 	}
 
 	wt, _ := repo.Worktree()
-	
+
 	// Commit 40 days ago
 	sig := &object.Signature{
 		Name:  "Test",
 		Email: "test@test.com",
 		When:  time.Now().Add(-40 * 24 * time.Hour),
 	}
-	
+
 	file, _ := fs.Create("old.txt")
 	file.Close()
 	wt.Add("old.txt")
@@ -134,19 +134,19 @@ func TestScanner_CountCommitsBetween(t *testing.T) {
 	wt, _ := repo.Worktree()
 
 	sig := &object.Signature{Name: "T", Email: "t", When: time.Now()}
-	
+
 	// Commit 1
 	file1, _ := fs.Create("f1")
 	file1.Close()
 	wt.Add("f1")
 	h1, _ := wt.Commit("c1", &git.CommitOptions{Author: sig})
-	
+
 	// Commit 2
 	file2, _ := fs.Create("f2")
 	file2.Close()
 	wt.Add("f2")
 	_, _ = wt.Commit("c2", &git.CommitOptions{Author: sig})
-	
+
 	// Commit 3
 	file3, _ := fs.Create("f3")
 	file3.Close()
@@ -154,7 +154,7 @@ func TestScanner_CountCommitsBetween(t *testing.T) {
 	h3, _ := wt.Commit("c3", &git.CommitOptions{Author: sig})
 
 	s := &scanner{}
-	
+
 	// Between 1 and 3 should be 2 commits (c2, c3)
 	count, err := s.countCommitsBetween(repo, h1, h3)
 	if err != nil {
@@ -192,32 +192,42 @@ func TestScanner_AheadBehind(t *testing.T) {
 
 	// 3. Mock a remote branch (behind)
 	err := repo.CreateBranch(&config.Branch{Name: "temp-remote"})
-	if err != nil { t.Fatalf("create branch failed: %v", err) }
-	
+	if err != nil {
+		t.Fatalf("create branch failed: %v", err)
+	}
+
 	err = repo.Storer.SetReference(plumbing.NewHashReference("refs/heads/temp-remote", base))
-	if err != nil { t.Fatalf("set reference failed: %v", err) }
-	
+	if err != nil {
+		t.Fatalf("set reference failed: %v", err)
+	}
+
 	err = wt.Checkout(&git.CheckoutOptions{Branch: "refs/heads/temp-remote"})
-	if err != nil { t.Fatalf("checkout failed: %v", err) }
-	
+	if err != nil {
+		t.Fatalf("checkout failed: %v", err)
+	}
+
 	f2, _ := fs.Create("behind1")
 	f2.Close()
 	wt.Add("behind1")
 	_, _ = wt.Commit("behind1", &git.CommitOptions{Author: sig})
-	
+
 	f3, _ := fs.Create("behind2")
 	f3.Close()
 	wt.Add("behind2")
 	behind2, _ := wt.Commit("behind2", &git.CommitOptions{Author: sig})
-	
+
 	// Set origin/master to behind2
 	err = repo.Storer.SetReference(plumbing.NewHashReference("refs/remotes/origin/master", behind2))
-	if err != nil { t.Fatalf("set remote ref failed: %v", err) }
-	
+	if err != nil {
+		t.Fatalf("set remote ref failed: %v", err)
+	}
+
 	// Back to master
 	err = wt.Checkout(&git.CheckoutOptions{Branch: "refs/heads/master"})
-	if err != nil { t.Fatalf("checkout master failed: %v", err) }
-	
+	if err != nil {
+		t.Fatalf("checkout master failed: %v", err)
+	}
+
 	// Configure tracking
 	c, _ := repo.Config()
 	c.Branches["master"] = &config.Branch{
@@ -232,7 +242,7 @@ func TestScanner_AheadBehind(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not get master ref: %v", err)
 	}
-	
+
 	ahead, behind, err := s.getAheadBehindForBranch(repo, ref)
 	if err != nil {
 		t.Fatalf("getAheadBehind failed: %v", err)

@@ -40,7 +40,7 @@ func main() {
 
 	localBinaryPath := filepath.Join("bin", binaryName)
 	if _, err := os.Stat(localBinaryPath); os.IsNotExist(err) {
-		log.Fatalf("Binary not found: %s. Please run 'task build-cross' first.", localBinaryPath)
+		log.Fatalf("Binary not found: %s. Please run 'task build:cross' first.", localBinaryPath)
 	}
 
 	// 2. Prepare remote execution
@@ -63,7 +63,7 @@ func main() {
 	// 3. Execute
 	fmt.Println("📡 Executing GitPulseMLC on remote host...")
 	fmt.Println(strings.Repeat("─", 40))
-	
+
 	// Pass through any additional arguments to the remote binary
 	// (Note: this is simplified, might need better escaping)
 	cmdArgs := strings.Join(flag.Args(), " ")

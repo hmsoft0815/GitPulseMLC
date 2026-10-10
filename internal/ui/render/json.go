@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gitpulsemcl/pkg/gitmonitor"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
 )
 
 type Output struct {

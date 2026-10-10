@@ -6,20 +6,18 @@ package render
 import (
 	"fmt"
 	"strings"
-	"sort"
 
-	"gitpulsemcl/internal/ui/styles"
-	"gitpulsemcl/internal/util"
-	"gitpulsemcl/pkg/config"
-	"gitpulsemcl/pkg/gitmonitor"
+	"github.com/hmsoft0815/GitPulseMLC/internal/ui/styles"
+	"github.com/hmsoft0815/GitPulseMLC/internal/util"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/config"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
 type rowInfo struct {
 	status      *gitmonitor.RepoStatus
-	statusStr   string
-	statusStyle lipgloss.Style
+	statusStr   string // already styled
 	needsAction bool
 }
 
@@ -33,51 +31,7 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 	for _, status := range allResults {
 		info := rowInfo{status: status}
 
-		if status.ErrorMsg != "" {
-			info.statusStr = "ERROR"
-			info.statusStyle = styles.Behind
-			info.needsAction = true
-		} else {
-			hasAhead, hasBehind := false, false
-			for _, b := range status.LocalBranches {
-				if b.Ahead > 0 {
-					hasAhead = true
-				}
-				if b.Behind > 0 {
-					hasBehind = true
-				}
-			}
-
-			if !status.IsClean {
-				info.statusStr = "DIRTY"
-				info.statusStyle = styles.Dirty
-				if len(status.ChangedFiles) > 0 {
-					var parts []string
-					keys := make([]string, 0, len(status.ChangedFiles))
-					for k := range status.ChangedFiles {
-						keys = append(keys, k)
-					}
-					sort.Strings(keys)
-					const limit = 4
-					for i, k := range keys {
-						if i >= limit {
-							parts = append(parts, fmt.Sprintf("+%d", len(keys)-limit))
-							break
-						}
-						parts = append(parts, fmt.Sprintf("%d%s", status.ChangedFiles[k], k))
-					}
-					info.statusStr += fmt.Sprintf(" (%s)", strings.Join(parts, ", "))
-				}
-			} else {
-				info.statusStr = "CLEAN"
-				info.statusStyle = styles.Clean
-			}
-
-			if status.HasNoRemote {
-				info.statusStr += " " + styles.NoRemote.Render("(No Remote)")
-			}
-			info.needsAction = status.ErrorMsg != "" || !status.IsClean || status.StashCount > 0 || hasAhead || hasBehind
-		}
+		info.statusStr, info.needsAction = statusCell(status)
 
 		if !cfg.Settings.CompactMode || info.needsAction {
 			toDisplay = append(toDisplay, info)
@@ -117,7 +71,7 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 		fmt.Printf("%s%s%s%s\n",
 			styles.ColName.Render(styles.Header.Render(s.Name)),
 			styles.ColBranch.Render(styles.Branch.Render(branch)),
-			styles.ColStatus.Render(info.statusStyle.Render(info.statusStr)),
+			styles.ColStatus.Render(info.statusStr),
 			styles.Path.Render(displayPath))
 
 		if details && s.ErrorMsg == "" {
@@ -155,7 +109,7 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 		fmt.Println(styles.Header.Render("SUMMARY:"))
 		fmt.Printf("  Total Projects: %d\n", summary.Total)
 		if cfg.Settings.CompactMode {
-			fmt.Printf(styles.Muted.Render("  (Compact Mode: showing %d repos needing action)\n"), len(toDisplay))
+			fmt.Println(styles.Muted.Render(fmt.Sprintf("  (Compact Mode: showing %d repos needing action)", len(toDisplay))))
 		}
 		renderStat := func(count int, active lipgloss.Style) string {
 			if count == 0 {

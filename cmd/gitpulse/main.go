@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -12,9 +13,8 @@ import (
 	"sort"
 	"strings"
 
-	"gitpulsemcl/internal/ui/render"
-	"gitpulsemcl/pkg/config"
-	"gitpulsemcl/pkg/gitmonitor"
+	"github.com/hmsoft0815/GitPulseMLC/internal/ui/render"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
@@ -59,7 +59,8 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "GitPulseMLC  - Monitor the heartbeat of your local Git repositories\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
-		fmt.Fprintf(os.Stderr, "  gitpulse [flags]\n\n")
+		fmt.Fprintf(os.Stderr, "  gitpulse [flags]              show the status of all configured repositories\n")
+		fmt.Fprintf(os.Stderr, "  gitpulse init [flags] [DIR]   find repositories below DIR and add them to the config\n\n")
 		fmt.Fprintf(os.Stderr, "Flags:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nConfig Lookup Order:\n")
@@ -70,6 +71,19 @@ func main() {
 	}
 
 	flag.Parse()
+
+	if flag.Arg(0) == "init" {
+		if err := runInit(flag.Args()[1:], *configFlag, os.Stdout); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				os.Exit(0)
+			}
+			log.Fatalf("init: %v", err)
+		}
+		return
+	}
+	if flag.NArg() > 0 {
+		log.Fatalf("unknown command %q — see gitpulse --help", flag.Arg(0))
+	}
 
 	if *printVersion {
 		fmt.Printf("GitPulseMLC version %s\n", version)
@@ -82,15 +96,7 @@ func main() {
 
 	details := *showDetails || *showAll
 
-	configPath := findConfig(*configFlag)
-	if configPath == "" {
-		log.Fatalf("Configuration file not found. Please create config/repos.ini or ~/.gitpulsemlc/repos.ini")
-	}
-
-	cfg, err := config.LoadConfig(configPath)
-	if err != nil {
-		log.Fatalf("failed to load config from %s: %v", configPath, err)
-	}
+	cfg := loadConfigOrExplain(*configFlag)
 
 	if *compactFlag {
 		cfg.Settings.CompactMode = true
