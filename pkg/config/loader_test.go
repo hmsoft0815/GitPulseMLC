@@ -5,6 +5,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -42,11 +43,11 @@ show_icons = false
 		t.Errorf("expected 3 projects, got %d", len(cfg.Projects))
 	}
 
-	if cfg.Projects["test1"] != "/path/to/test1" {
+	if cfg.Projects["test1"] != filepath.FromSlash("/path/to/test1") {
 		t.Errorf("expected path '/path/to/test1', got %s", cfg.Projects["test1"])
 	}
 
-	if cfg.Projects["test3"] != "/path/to/test3" {
+	if cfg.Projects["test3"] != filepath.FromSlash("/path/to/test3") {
 		t.Errorf("expected path '/path/to/test3' for test3 (corrected from .git), got %s", cfg.Projects["test3"])
 	}
 
@@ -70,14 +71,14 @@ func TestManager_CRUD(t *testing.T) {
 	}
 
 	cfg, _ := m.Load()
-	if cfg.Projects["new-proj"] != "/path/to/new" {
+	if cfg.Projects["new-proj"] != filepath.FromSlash("/path/to/new") {
 		t.Errorf("expected /path/to/new, got %s", cfg.Projects["new-proj"])
 	}
 
 	// 2. Add with .git
 	m.AddProject("git-proj", "/path/to/git/.git")
 	cfg, _ = m.Load()
-	if cfg.Projects["git-proj"] != "/path/to/git" {
+	if cfg.Projects["git-proj"] != filepath.FromSlash("/path/to/git") {
 		t.Errorf("expected /path/to/git, got %s", cfg.Projects["git-proj"])
 	}
 
@@ -97,7 +98,7 @@ func TestManager_CRUD(t *testing.T) {
 		t.Fatalf("ToggleProject enable failed: %v", err)
 	}
 	cfg, _ = m.Load()
-	if cfg.Projects["new-proj"] != "/path/to/new" {
+	if cfg.Projects["new-proj"] != filepath.FromSlash("/path/to/new") {
 		t.Errorf("new-proj should be back in active projects")
 	}
 
