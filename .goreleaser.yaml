@@ -1,54 +1,74 @@
-# .goreleaser.yaml
-version: 1
-project_name: gitpulsemlc
+# GoReleaser v2 — run by .github/workflows/release.yml on every v* tag.
+# Local dry run: task release:snapshot
+version: 2
+project_name: gitpulse
 
 before:
   hooks:
     - go mod tidy
+    - go test ./...
 
 builds:
-  - env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-    main: ./cmd/tui
+  - id: gitpulse
+    main: ./cmd/gitpulse
     binary: gitpulse
-    ldflags:
-      - -s -w -X main.version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, windows, darwin]
+    goarch: [amd64, arm64]
     flags:
       - -trimpath
+    ldflags:
+      - -s -w -X main.version={{.Version}}
 
 archives:
-  - format: tar.gz
-    # use zip for windows archives
+  - id: default
+    # gitpulse_1.2.0_linux_amd64.tar.gz — install.sh relies on this pattern
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     files:
       - LICENSE
       - README.md
       - README-de.md
+      - CHANGELOG.md
       - docs/gitpulse.1
       - docs/json_schema.md
       - docs/schema.json
       - config/repos.ini.example
 
+nfpms:
+  - id: packages
+    package_name: gitpulse
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    vendor: Michael Lechner
+    homepage: https://mlcgo.eu/products/gitpulse/
+    maintainer: Michael Lechner <xsltwonder@gmail.com>
+    description: Shows which of your local Git repositories need attention — uncommitted changes, unpushed commits, stashes, stale branches.
+    license: MIT
+    formats: [deb, rpm, apk]
+    contents:
+      - src: docs/gitpulse.1
+        dst: /usr/share/man/man1/gitpulse.1
+      - src: config/repos.ini.example
+        dst: /usr/share/doc/gitpulse/repos.ini.example
+
 checksum:
-  name_template: 'checksums.txt'
+  name_template: checksums.txt
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
+
+release:
+  footer: |
+    **Quickstart:** `gitpulse init ~/code && gitpulse` — see the [README](https://github.com/hmsoft0815/GitPulseMLC#quickstart).
 
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
-      - '^chore:'
-      - 'README'
+      - '^docs'
+      - '^test'
+      - '^chore'

@@ -2,22 +2,28 @@ name: Release
 on:
   push:
     tags: ["v*"]
-  workflow_dispatch: # Allows manual triggering from GitHub UI
+  workflow_dispatch:
 
 permissions:
-  contents: write # Required to create/update releases
+  contents: write # create the GitHub release and upload assets
 
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-go@v5
-        with: { go-version: '1.25' }
-      - uses: goreleaser/goreleaser-action@v5
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Tag must match VERSION
+        run: test "${GITHUB_REF_NAME#v}" = "$(cat VERSION)" || { echo "tag $GITHUB_REF_NAME does not match VERSION $(cat VERSION)"; exit 1; }
+        if: startsWith(github.ref, 'refs/tags/')
+      - uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
+          version: "~> v2"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
