@@ -54,6 +54,26 @@ func load() {
 }
 ```
 
+To add projects programmatically (creating the file if needed), use `config.NewManager(path).AddProjects(...)`;
+`Known()` returns the names and paths already listed.
+
+### 3. `discover`
+Finds Git repositories below a directory — the engine behind `gitpulse init`.
+
+```go
+import "github.com/hmsoft0815/GitPulseMLC/pkg/discover"
+
+func find() {
+    paths, err := discover.Find("/home/me/code", discover.DefaultMaxDepth)
+    if err != nil {
+        return
+    }
+    for _, r := range discover.Name(paths, map[string]bool{}) {
+        fmt.Println(r.Name, r.Path) // unique project names, e.g. "client-api"
+    }
+}
+```
+
 ## JSON Export
 
 All models in `pkg/gitmonitor` are equipped with standard `json` struct tags. You can easily generate the same data format used by the CLI:

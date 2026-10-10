@@ -1,17 +1,18 @@
 # GitPulseMLC Configuration Example
 
 [projects]
+# Quickest way to create your own: gitpulse init ~/code
 # Format: Project Name = Absolute Filesystem Path
 # GitPulseMLC will warn if the path ends in '.git' and automatically adjust.
-gitpulse = /mnt/data2tb/dev/gitpulsemlc
-my-website = /mnt/data2tb/www/personal-site
-backend-api = /mnt/data2tb/api/core-service
+webshop = /home/me/code/webshop
+my-website = /home/me/www/personal-site
+backend-api = /home/me/code/core-service
 
 [general]
 # Optional: Shorten deep paths in the output
-# This will replace "/mnt/data2tb" with "@" in the TUI and reports.
-replace_path_prefix = /mnt/data2tb
-replace_with = "@"
+# This will replace "/home/me" with "~" in the TUI and reports.
+replace_path_prefix = /home/me
+replace_with = ~
 
 [settings]
 # Minimum width for the NAME column (default: 25)
@@ -26,4 +27,4 @@ compact_mode = false
 
 [disabled_projects]
 # Projects in this section are ignored by the scanner
-# old-tool = /mnt/data2tb/dev/old-tool
+# old-tool = /home/me/code/old-tool

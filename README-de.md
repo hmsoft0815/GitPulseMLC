@@ -1,122 +1,202 @@
 # GitPulseMLC
 
-> **[mlcgo.eu](https://mlcgo.eu)** — Werkzeuge, Bibliotheken und Handbücher · [Produktseite](https://mlcgo.eu/products/gitpulse/)
+> **[mlcgo.eu](https://mlcgo.eu)** — Werkzeuge, Bibliotheken und Handbücher · [Produktseite](https://mlcgo.eu/products/gitpulse/) · [English](README.md)
 
+**Ein Befehl zeigt dir, in welchem deiner lokalen Git-Repositories noch etwas offen ist:**
+nicht committete Änderungen, nicht gepushte Commits, vergessene Stashes und verwaiste Branches.
+GitPulse liest nur — es committet, pullt und pusht nie.
 
-**Überwache den Herzschlag deiner lokalen Git-Repositories.**
+```
+$ gitpulse
+NAME          BRANCH   STATUS               PATH
+──────────────────────────────────────────────────────────────
+api-server    main     ↑2                   ~/code/api-server
+blog          main     CLEAN 1 stale        ~/code/blog
+dotfiles      main     CLEAN                ~/code/dotfiles
+invoice-tool  main     1 stash              ~/code/invoice-tool
+webshop       main     DIRTY (1.css, 2.go)  ~/code/webshop
 
-Behalte den Überblick über alle deine Projekte – schnell, sicher und direkt im Terminal.
+SUMMARY:
+  Total Projects: 5
+  Dirty:         [ 1 ] (Action required!)
+  Ahead:         [ 1 ] (Need to push)
+```
 
----
+So liest du die Statusspalte:
 
-## 🇩🇪 Zusammenfassung
+| Status | Bedeutung | Was tun |
+|---|---|---|
+| `DIRTY (2.go)` | Nicht committete Änderungen, nach Dateityp gruppiert | committen oder verwerfen |
+| `↑2` | 2 lokale Commits, noch nicht gepusht | `git push` |
+| `↓3` | 3 Commits auf dem Remote, die dir fehlen | `git pull` |
+| `1 stash` | Mit `git stash` geparkte Arbeit | anwenden oder löschen |
+| `1 stale` | Ein lokaler Branch, seit über 30 Tagen unberührt | löschen oder fertigmachen |
+| `(No Remote)` | Repository existiert nur auf diesem Rechner | Remote anlegen, wenn es wichtig ist |
 
-GitPulseMLC ist ein performantes Go-basiertes Dashboard zur Überwachung einer Vielzahl lokaler Git-Repositories. Es wurde entwickelt, um Entwicklern, die an vielen Projekten gleichzeitig arbeiten, eine schnelle Antwort auf die täglichen Fragen zu geben: Habe ich irgendwo vergessen zu pushen? Liegen noch ungespeicherte Änderungen in einem alten Branch? Sind meine lokalen Repositories auf dem Stand des Servers?
+## Ist das was für mich?
 
-### Kern-Features
-*   **Blitzschnell**: Nutzt Go-Concurrency, um hunderte Repositories in Sekunden zu scannen.
-*   **Read-Only & Sicher**: Das Tool führt keine Schreibvorgänge oder automatische Merges aus. Keine Netzwerkzugriffe (außer lokal auf FETCH_HEAD).
-*   **Status auf einen Blick**: Zeigt Dirty-States mit **Dateityp-Zusammenfassung** (z.B. `+3 .go`), Ahead/Behind-Counter, Stash-Informationen und das Alter der letzten Commits.
-*   **Vielfältige Ausgabe**: Unterstützt das TUI-Dashboard, **JSON** Datenexport und hochkontrastreiche **HTML-Reports** (ideal für automatisierte Status-E-Mails).
-*   **Aufräum-Hilfe**: Markiert "Stale Branches" (ältestes Commit > 30 Tage) automatisch.
-*   **Kompakt-Modus**: Blendet auf Wunsch alle "sauberen" Repos aus, um den Fokus auf Arbeit zu lenken.
-*   **Pfad-Kürzung**: Konfigurierbare Ersetzung von Pfad-Präfixen, um die Anzeige auch bei tiefen Verzeichnisstrukturen übersichtlich zu halten.
-*   **Remote-Monitoring**: Überwache Repositories auf einem entfernten Server via SSH mit dem `remote_gitpulse` Tool.
-*   **Flexible Konfiguration**: Intelligente Suche nach der Konfigurationsdatei (lokal, Home-Verzeichnis oder via Flag).
+- Du arbeitest an **10 oder mehr Repositories** auf einem Rechner oder Server.
+- Dir ist schon Arbeit verloren gegangen, weil ein Commit **nie gepusht** wurde.
+- Du willst einen täglichen **„Was ist noch offen?“-Bericht** per Mail, Cron oder CI.
 
----
+Wer nur in einem Repository arbeitet, kommt mit `git status` aus.
 
-## 🛰️ Remote Monitoring
+## Schnellstart
 
-Repositories auf einem entfernten Server (macOS oder Linux) können mit dem `remote_gitpulse` Utility überwacht werden. Das Tool übernimmt automatisch das Kopieren der korrekten Binary und Konfiguration via SSH.
+**1. Installieren**
 
-### Nutzung
 ```bash
-# 1. Erstelle die notwendigen Binaries
-make build-remote build-cross
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/hmsoft0815/GitPulseMLC/main/install.sh | sh
 
-# 2. Starte den Remote-Scanner
-./bin/remote_gitpulse -host user@remote-server -config local-repos.ini -arch linux-amd64
+# oder mit Go
+go install github.com/hmsoft0815/GitPulseMLC/cmd/gitpulse@latest
+```
+
+Pakete für Debian/Ubuntu (`.deb`), Fedora (`.rpm`), Alpine (`.apk`) sowie Archive für Windows und macOS gibt es auf der
+[Release-Seite](https://github.com/hmsoft0815/GitPulseMLC/releases) und auf [mlcgo.eu](https://mlcgo.eu/products/gitpulse/).
+
+**2. Sag gitpulse, wo deine Repositories liegen**
+
+```bash
+gitpulse init ~/code          # findet jedes Git-Repository unterhalb von ~/code
+gitpulse init ~/work          # nochmal aufrufen, um weitere Ordner hinzuzufügen
+```
+
+Das schreibt `~/.gitpulsemlc/repos.ini`. Mit `--dry-run` siehst du vorher, was eingetragen würde.
+
+**3. Hinschauen**
+
+```bash
+gitpulse                      # alle Repositories
+gitpulse --compact            # nur die mit Handlungsbedarf
+gitpulse -v                   # dazu jeder Branch mit Sync-Stand und Alter
+```
+
+## Typische Einsätze
+
+```bash
+# Morgens: Was habe ich gestern offen gelassen?
+gitpulse --compact
+
+# Tägliche Status-Mail per Cron
+0 8 * * 1-5  gitpulse --html | mail -a "Content-Type: text/html" -s "Repo-Status" ich@example.com
+
+# Eigenes Monitoring oder Skripte füttern
+gitpulse --json | jq -r '.results[] | select(.is_clean == false) | .name'
+
+# Repositories auf einem Server per SSH prüfen (siehe Remote-Monitoring)
+remote_gitpulse -host user@server -config server-repos.ini -arch linux-amd64
 ```
 
 ---
 
-## 🛠️ Entwickler-Fokus: Nutze die Core-Library in deinen eigenen Projekten
+## Referenz
 
-GitPulseMLC ist modular aufgebaut. Die leistungsstarke Scanning-Engine kann nahtlos in eigene Dashboards, CI-Scripte oder Hintergrunddienste integriert werden:
+### Kommandozeile
+
+```
+gitpulse [flags]                 Status aller konfigurierten Repositories
+gitpulse init [flags] [DIR ...]  Repositories unter DIR finden und in die Config eintragen
+
+Flags:
+  --compact      nur Repositories mit Handlungsbedarf
+  -v, --all      Details zu jedem lokalen Branch und Stash
+  --progress     Scan-Fortschritt anzeigen (nur Terminal-Ausgabe)
+  --json         JSON-Ausgabe (Schema: docs/json_schema.md)
+  --html         kontrastreicher HTML-Bericht, z. B. für E-Mails
+  --no-color     reiner Text
+  --config PATH  diese Config-Datei verwenden
+  --version      Version ausgeben
+
+init-Flags:
+  --depth N      wie viele Verzeichnisebenen durchsucht werden (Standard 4)
+  --dry-run      nur auflisten, was eingetragen würde
+  --config PATH  Config-Datei, die angelegt oder erweitert wird
+```
+
+`init` überspringt versteckte Ordner, `node_modules` und `vendor` und schaut nicht in ein bereits gefundenes Repository hinein.
+Projekte, die schon in der Config stehen — aktiv oder deaktiviert —, werden nie doppelt eingetragen.
+
+### Konfiguration
+
+Suchreihenfolge: `--config`, `$GITPULSE_CONFIG`, `./config/repos.ini`, `~/.gitpulsemlc/repos.ini`.
+
+```ini
+[projects]
+# Name = absoluter Pfad
+webshop = /home/ich/code/webshop
+api-server = /home/ich/code/api-server
+
+[general]
+# wird in der Ausgabe als "~" angezeigt
+replace_path_prefix = /home/ich
+replace_with = ~
+
+[settings]
+column_name_width = 25
+show_summary = true
+compact_mode = false
+
+[disabled_projects]
+# hierher verschoben: wird nicht gescannt, bleibt aber gemerkt
+altes-tool = /home/ich/code/altes-tool
+```
+
+Ein vollständig kommentiertes Beispiel liegt in [`config/repos.ini.example`](config/repos.ini.example).
+
+### Remote-Monitoring
+
+`remote_gitpulse` kopiert das passende gitpulse-Binary und deine Config per SSH auf einen Linux- oder macOS-Server,
+führt es dort aus und räumt danach auf.
+
+```bash
+task build:cross build:remote
+./bin/remote_gitpulse -host user@server -config server-repos.ini -arch linux-amd64
+```
+
+### Go-Bibliothek
+
+Der Scanner ist ein normales Go-Paket, das du in eigenen Werkzeugen nutzen kannst:
 
 ```bash
 go get github.com/hmsoft0815/GitPulseMLC
 ```
 
-Detaillierte Beispiele zur Integration und API-Nutzung findest du in der **[Bibliotheks-Dokumentation](docs/LIBRARY.md)**.
+Siehe [docs/LIBRARY.md](docs/LIBRARY.md).
 
----
+### Aus dem Quellcode bauen
 
-##  Installation & Nutzung
+Benötigt Go 1.27.2+ und [Task](https://taskfile.dev).
 
-### Voraussetzungen
-*   Go 1.25+
-*   Git (installiert und konfiguriert)
-
-### Setup
-1.  Klone das Repository.
-2.  Kompiliere die Binary:
-    ```bash
-    go build -o gitpulse ./cmd/tui
-    ```
-3.  Erstelle deine `config/repos.ini` (siehe `config/repos.ini.example`):
-    ```ini
-    [projects]
-    mein-projekt = /mnt/data2tb/dev/projekt
-    web-app = /mnt/data2tb/dev/anderes/repo
-
-    [general]
-    replace_path_prefix = /mnt/data2tb
-    replace_with = "@"
-
-    [settings]
-    column_name_width = 30
-    show_summary = true
-    compact_mode = false
-    ```
-
-### Ausführen
 ```bash
-./gitpulse          # Standardansicht
-./gitpulse -v       # Detaillierter Modus: zeigt alle Branches, Sync-Status und Stashes
-./gitpulse --progress # Zeigt den Scan-Fortschritt (hilfreich bei vielen Repos)
-./gitpulse --compact # Zeigt nur Repositories mit Handlungsbedarf (Dirty, Ahead, etc.)
-./gitpulse --html > report.html # Erzeugt einen kontrastreichen HTML-Report
-./gitpulse --json > data.json   # Exportiert Statusdaten als JSON (Siehe docs/json_schema.md)
-./gitpulse --config /pfad/zu/meiner.ini # Nutzt eine spezifische Konfigurationsdatei
-./gitpulse --version # Zeigt Versionsinformationen
-./gitpulse --help    # Zeigt alle verfügbaren Optionen
+task build        # bin/gitpulse
+task test
+task --list       # alle Tasks
 ```
 
-> [!IMPORTANT]
-> **⚠️ Hinweis für Windows-Nutzer**: Der Windows Defender oder andere Virenscanner können die Ausführung der kompilierten Binary blockieren, da diese nicht signiert ist und viele Dateizugriffe gleichzeitig ausführt. In diesem Fall muss eine Ausnahme für die `gitpulse.exe` oder das entsprechende Verzeichnis im Virenscanner hinzugefügt werden.
+> **Windows:** Der Defender kann das unsignierte Binary blockieren, weil es schnell viele Dateien liest.
+> In dem Fall eine Ausnahme für `gitpulse.exe` anlegen.
 
 ---
 
-## Motivation & Credits
+## Warum GitPulseMLC?
 
-### Warum GitPulseMLC?
-Das Verwalten von 20+ aktiven Repositories auf einem lokalen Server oder einer Workstation führt oft zu "vergessenen" Commits oder veralteten lokalen Branches. Bestehende GUI-Tools sind oft zu schwerfällig. GitPulseMLC wurde entwickelt, um eine "Single Source of Truth" zu bieten, die so schnell wie `ls`, aber so informativ wie `git status` ist.
+Bei 20 und mehr aktiven Repositories auf einem Rechner oder Server gehen Commits vergessen und Branches verwaisen.
+GUI-Werkzeuge sind schwer und verlangen, jedes Projekt einzeln anzuklicken. GitPulse gibt eine Antwort — so schnell
+wie `ls` und so aussagekräftig wie `git status`, für alle auf einmal.
 
 ### Credits
-*   **Engine**: Basiert auf der exzellenten [go-git](https://github.com/go-git/go-git) Library.
-*   **UI**: Gestylt mit [Lip Gloss](https://github.com/charmbracelet/lipgloss).
-*   **Inspiration**: Entwickelt als praktisches Werkzeug für hocheffiziente Entwicklungsumgebungen.
 
----
+- **Engine:** [go-git](https://github.com/go-git/go-git)
+- **UI:** [Lip Gloss](https://github.com/charmbracelet/lipgloss)
 
 ## Lizenz
 
-Copyright (c) 2026 Michael Lechner.
-Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die Datei `LICENSE` für Details.
+Copyright (c) 2026 Michael Lechner. MIT-Lizenz — siehe [LICENSE](LICENSE). Änderungen: [CHANGELOG.md](CHANGELOG.md).
 
 <!-- mlcai-private -->
 ## Projektdokumentation (`.mlcai/`)
 
-`.mlcai/` ist ein **privates Git-Submodul**: interne Planung, Backlog und Arbeitsnotizen, gepflegt mit dem MLC Doc Hub. Es ist nicht öffentlich zugänglich — **ohne** `--recurse-submodules` klonen; für den Build wird es nicht gebraucht. Links nach `.mlcai/` funktionieren nur mit Zugriff (`git submodule update --init .mlcai`).
+`.mlcai/` enthält interne Planung, Backlog und Arbeitsnotizen, gepflegt mit dem MLC Doc Hub.
+Es ist ein separater privater Klon, nicht Teil dieses Repositories, und für den Build nicht nötig.

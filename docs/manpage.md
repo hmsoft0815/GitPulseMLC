@@ -6,6 +6,8 @@ gitpulse - Monitor the heartbeat of local Git repositories
 ## SYNOPSIS
 **gitpulse** [*OPTIONS*]
 
+**gitpulse init** [*INIT-OPTIONS*] [*DIR* ...]
+
 ## DESCRIPTION
 **gitpulse** is a high-performance dashboard designed to monitor a large number of local Git repositories simultaneously. It provides a centralized view of your development environment, ensuring you never lose track of uncommitted changes, unpushed branches, or stale worktrees.
 
@@ -24,6 +26,13 @@ Windows Defender or other antivirus tools might flag the generated binary as sus
 *   **--config PATH**: Use a specific configuration file.
 *   **--version**: Print version information and exit.
 *   **--help**: Print a summary of options and exit.
+
+## INIT
+**gitpulse init** searches each *DIR* (default: the current directory) for Git repositories and adds the new ones to the configuration file. If no configuration exists yet, it creates `~/.gitpulsemlc/repos.ini` with default settings. Hidden directories, `node_modules` and `vendor` are skipped, and the search does not descend into a repository it has found. Projects already listed in `[projects]` or `[disabled_projects]` are not added again, so `init` can be run repeatedly for several folders.
+
+*   **--depth N**: Number of directory levels to search (default 4).
+*   **--dry-run**: List what would be added without writing anything.
+*   **--config PATH**: Configuration file to create or extend.
 
 ## CONFIGURATION
 The tool uses an INI-style configuration file (`repos.ini`).
