@@ -53,7 +53,7 @@ curl -fsSL https://raw.githubusercontent.com/hmsoft0815/GitPulseMLC/main/install
 go install github.com/hmsoft0815/GitPulseMLC/cmd/gitpulse@latest
 ```
 
-Pakete für Debian/Ubuntu (`.deb`), Fedora (`.rpm`), Alpine (`.apk`) sowie Archive für Windows und macOS gibt es auf der
+Die macOS-Downloads auf mlcgo.eu sind signiert und notarisiert. Pakete für Debian/Ubuntu (`.deb`), Fedora (`.rpm`), Alpine (`.apk`) sowie Archive für Windows und macOS gibt es auf der
 [Release-Seite](https://github.com/hmsoft0815/GitPulseMLC/releases) und auf [mlcgo.eu](https://mlcgo.eu/products/gitpulse/).
 
 **2. Sag gitpulse, wo deine Repositories liegen**
@@ -80,7 +80,7 @@ gitpulse -v                   # dazu jeder Branch mit Sync-Stand und Alter
 gitpulse --compact
 
 # Tägliche Status-Mail per Cron
-0 8 * * 1-5  gitpulse --html | mail -a "Content-Type: text/html" -s "Repo-Status" ich@example.com
+0 8 * * 1-5  gitpulse --compact --html | mail -a "Content-Type: text/html" -s "Repo-Status" ich@example.com
 
 # Eigenes Monitoring oder Skripte füttern
 gitpulse --json | jq -r '.results[] | select(.is_clean == false) | .name'
@@ -102,6 +102,7 @@ gitpulse init [flags] [DIR ...]  Repositories unter DIR finden und in die Config
 Flags:
   --compact      nur Repositories mit Handlungsbedarf
   -v, --all      Details zu jedem lokalen Branch und Stash
+  --jobs N       so viele Repositories parallel scannen (Standard: eins pro CPU)
   --progress     Scan-Fortschritt anzeigen (nur Terminal-Ausgabe)
   --json         JSON-Ausgabe (Schema: docs/json_schema.md)
   --html         kontrastreicher HTML-Bericht, z. B. für E-Mails

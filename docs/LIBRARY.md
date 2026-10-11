@@ -40,6 +40,13 @@ func example() {
 }
 ```
 
+To scan many repositories, `ScanAll` runs scans in parallel and keeps the order of its input:
+
+```go
+targets := []gitmonitor.Target{{Name: "api", Path: "/code/api"}, {Name: "web", Path: "/code/web"}}
+results := gitmonitor.ScanAll(gitmonitor.NewScanner(), targets, 0, nil) // 0 = one worker per CPU
+```
+
 ### 2. `config`
 A helper package to load and manage `repos.ini` configuration files.
 

@@ -19,6 +19,7 @@ Windows Defender or other antivirus tools might flag the generated binary as sus
 ## OPTIONS
 *   **-v, --all**: Enable verbose mode. Displays details for all local branches and active stashes.
 *   **--compact**: Enable compact mode. Only repositories that require action are displayed.
+*   **--jobs N**: Scan up to N repositories in parallel (default: one per CPU). Lower it on slow disks.
 *   **--progress**: Show a real-time scanning progress indicator on stderr.
 *   **--html**: Output results as a standalone, high-contrast HTML report.
 *   **--json**: Output results in JSON format.

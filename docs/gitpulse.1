@@ -1,4 +1,4 @@
-.TH GITPULSE 1 "October 2026" "1.2.0" "GitPulseMLC Manual"
+.TH GITPULSE 1 "October 2026" "1.3.0" "GitPulseMLC Manual"
 .SH NAME
 gitpulse \- Monitor the heartbeat of local Git repositories
 .SH SYNOPSIS
@@ -22,6 +22,9 @@ Enable verbose mode. Displays details for all local branches, including ahead/be
 .TP
 .B \-\-compact
 Enable compact mode. Only repositories that require action (dirty state, ahead/behind commits, or stashes) will be displayed. Clean repositories are hidden.
+.TP
+.BI \-\-jobs " N"
+Scan up to N repositories in parallel (default: one per CPU). Lower it on slow disks.
 .TP
 .B \-\-progress
 Show a real-time scanning progress indicator on stderr. Only applicable in TUI mode.
