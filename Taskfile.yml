@@ -4,6 +4,9 @@ vars:
   VERSION:
     sh: cat VERSION
   LDFLAGS: -s -w -X main.version={{.VERSION}}
+  DOWNLOAD_HOST: mlc@mlcgo.eu
+  DOWNLOAD_DIR: /var/www/html/downloads/gitpulse
+  DOWNLOAD_TARGET: '{{.DOWNLOAD_HOST}}:{{.DOWNLOAD_DIR}}'
 
 tasks:
   default:
@@ -32,6 +35,19 @@ tasks:
           go build -ldflags="{{.LDFLAGS}}" -trimpath
           -o bin/gitpulse-{{splitList "/" .ITEM | first}}-{{splitList "/" .ITEM | last}}{{if hasPrefix "windows" .ITEM}}.exe{{end}}
           ./cmd/gitpulse
+
+  sign:macos:
+    desc: Sign and notarize the macOS binaries in bin/ on macstudio (needs MAC_KEYCHAIN_PASS)
+    deps: [build:cross]
+    cmds:
+      - scripts/sign-macos.sh bin/gitpulse-darwin-arm64 bin/gitpulse-darwin-amd64
+
+  publish:downloads:
+    desc: Build all binaries, sign the macOS ones and upload them to mlcgo.eu/downloads/gitpulse/
+    deps: [sign:macos]
+    cmds:
+      - rsync -az bin/gitpulse-darwin-amd64 bin/gitpulse-darwin-arm64 bin/gitpulse-linux-amd64 bin/gitpulse-linux-arm64 bin/gitpulse-windows-amd64.exe {{.DOWNLOAD_TARGET}}/
+      - ssh {{.DOWNLOAD_HOST}} {{.DOWNLOAD_DIR}}/gitpulse-linux-amd64 --version
 
   dev:
     desc: Run gitpulse from source (task dev -- --compact)

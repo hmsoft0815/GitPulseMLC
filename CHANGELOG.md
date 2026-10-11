@@ -2,7 +2,17 @@
 
 All notable changes to GitPulseMLC. Details and reasoning live in the project documentation.
 
-## 1.2.0 — unreleased
+## 1.3.0 — 2026-10-11
+
+### Added
+- Repositories are scanned in parallel: 73 repositories take 4 s instead of 33 s; `--jobs N` limits it.
+- The macOS downloads on mlcgo.eu are signed with a Developer ID and notarized by Apple.
+
+### Fixed
+- The HTML report honours `--compact` and shows the same status column as the terminal.
+- The HTML report escapes repository names, branches and paths and uses inline styles for mail clients.
+
+## 1.2.0 — 2026-10-10
 
 ### Added
 - `gitpulse init [DIR]` finds Git repositories below a folder and writes or extends the config.

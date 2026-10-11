@@ -10,19 +10,41 @@ import (
 
 	"github.com/hmsoft0815/GitPulseMLC/internal/ui/styles"
 	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
-// statusCell builds the STATUS column for one repository: every reason it needs
-// attention, each in its own colour, or CLEAN if there is none. needsAction is
-// true for anything except CLEAN and informational markers (no remote, stale).
-func statusCell(s *gitmonitor.RepoStatus) (cell string, needsAction bool) {
+// partKind says what a piece of the status column means; each renderer maps
+// it to its own colour.
+type partKind int
+
+const (
+	kindError partKind = iota
+	kindDirty
+	kindAhead
+	kindBehind
+	kindStash
+	kindClean
+	kindStale
+	kindNoRemote
+)
+
+// statusPart is one piece of the status column, e.g. "↑2".
+type statusPart struct {
+	kind partKind
+	text string
+}
+
+// statusParts lists every reason a repository needs attention, or CLEAN if
+// there is none, followed by informational markers (stale branches, no
+// remote). needsAction is false for CLEAN and informational markers alone.
+func statusParts(s *gitmonitor.RepoStatus) (parts []statusPart, needsAction bool) {
 	if s.ErrorMsg != "" {
-		return styles.Behind.Render("ERROR"), true
+		return []statusPart{{kindError, "ERROR"}}, true
 	}
 
-	var parts []string
 	if !s.IsClean {
-		parts = append(parts, styles.Dirty.Render("DIRTY"+changedFilesSummary(s.ChangedFiles)))
+		parts = append(parts, statusPart{kindDirty, "DIRTY" + changedFilesSummary(s.ChangedFiles)})
 	}
 	ahead, behind, stale := 0, 0, 0
 	for _, b := range s.LocalBranches {
@@ -33,26 +55,48 @@ func statusCell(s *gitmonitor.RepoStatus) (cell string, needsAction bool) {
 		}
 	}
 	if ahead > 0 {
-		parts = append(parts, styles.Ahead.Render(fmt.Sprintf("↑%d", ahead)))
+		parts = append(parts, statusPart{kindAhead, fmt.Sprintf("↑%d", ahead)})
 	}
 	if behind > 0 {
-		parts = append(parts, styles.Behind.Render(fmt.Sprintf("↓%d", behind)))
+		parts = append(parts, statusPart{kindBehind, fmt.Sprintf("↓%d", behind)})
 	}
 	if s.StashCount > 0 {
-		parts = append(parts, styles.Dirty.Render(fmt.Sprintf("%d stash", s.StashCount)))
+		parts = append(parts, statusPart{kindStash, fmt.Sprintf("%d stash", s.StashCount)})
 	}
 	needsAction = len(parts) > 0
 	if !needsAction {
-		parts = append(parts, styles.Clean.Render("CLEAN"))
+		parts = append(parts, statusPart{kindClean, "CLEAN"})
 	}
 
 	if stale > 0 {
-		parts = append(parts, styles.Muted.Render(fmt.Sprintf("%d stale", stale)))
+		parts = append(parts, statusPart{kindStale, fmt.Sprintf("%d stale", stale)})
 	}
 	if s.HasNoRemote {
-		parts = append(parts, styles.NoRemote.Render("(No Remote)"))
+		parts = append(parts, statusPart{kindNoRemote, "(No Remote)"})
 	}
-	return strings.Join(parts, " "), needsAction
+	return parts, needsAction
+}
+
+// terminalStyles maps each part kind to its terminal colour.
+var terminalStyles = map[partKind]lipgloss.Style{
+	kindError:    styles.Behind,
+	kindDirty:    styles.Dirty,
+	kindAhead:    styles.Ahead,
+	kindBehind:   styles.Behind,
+	kindStash:    styles.Dirty,
+	kindClean:    styles.Clean,
+	kindStale:    styles.Muted,
+	kindNoRemote: styles.NoRemote,
+}
+
+// statusCell renders the STATUS column for the terminal.
+func statusCell(s *gitmonitor.RepoStatus) (cell string, needsAction bool) {
+	parts, needsAction := statusParts(s)
+	rendered := make([]string, len(parts))
+	for i, p := range parts {
+		rendered[i] = terminalStyles[p.kind].Render(p.text)
+	}
+	return strings.Join(rendered, " "), needsAction
 }
 
 // changedFilesSummary renders " (2.go, 1.css)" for at most four extensions.
