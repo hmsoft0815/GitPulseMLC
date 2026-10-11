@@ -53,8 +53,9 @@ curl -fsSL https://raw.githubusercontent.com/hmsoft0815/GitPulseMLC/main/install
 go install github.com/hmsoft0815/GitPulseMLC/cmd/gitpulse@latest
 ```
 
-The macOS downloads on mlcgo.eu are signed and notarized. Debian/Ubuntu (`.deb`), Fedora (`.rpm`), Alpine (`.apk`) packages and Windows/macOS archives are on the
-[releases page](https://github.com/hmsoft0815/GitPulseMLC/releases) and on [mlcgo.eu](https://mlcgo.eu/products/gitpulse/).
+Debian/Ubuntu (`.deb`), Fedora (`.rpm`), Alpine (`.apk`) packages and Linux/Windows archives are on the
+[releases page](https://github.com/hmsoft0815/GitPulseMLC/releases). **macOS** binaries — signed and notarized — are on
+[mlcgo.eu](https://mlcgo.eu/products/gitpulse/); `install.sh` fetches them from there.
 
 **2. Tell gitpulse where your repositories are**
 

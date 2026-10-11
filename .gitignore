@@ -22,3 +22,6 @@ vendor/
 # private Klone (dochub-cli mlcai attach) — nicht Teil dieses Repos
 /.mlcai/
 /mlcprodweb/
+
+# lokale Release-Einstellungen (Hosts, Signatur-ID) — siehe .release.env.example
+.release.env

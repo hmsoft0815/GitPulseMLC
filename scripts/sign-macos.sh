@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 # Sign and notarize macOS binaries on the Mac build host, in place.
 #
-#   MAC_KEYCHAIN_PASS='<login password on macstudio>' scripts/sign-macos.sh bin/gitpulse-darwin-arm64 ...
+#   scripts/sign-macos.sh bin/gitpulse-darwin-arm64 ...
+#
+# Needs MAC_HOST, SIGN_ID and NOTARY_PROFILE (from .release.env via the
+# Taskfile, see .release.env.example) and MAC_KEYCHAIN_PASS, the login password
+# of the Mac, exported in the shell.
 #
 # The binaries are copied to the Mac, signed with the Developer ID (hardened
 # runtime, secure timestamp), submitted to Apple's notary service in one zip
 # and copied back over the originals. A bare Mach-O binary cannot carry a
 # stapled ticket — that only works for .app, .dmg and .pkg — so Gatekeeper
 # looks the ticket up online on first launch. That is enough for downloads.
-#
-# Same host, identity and notary profile as mlcterm and opticscript; the
-# profile belongs to the Apple account, not to one app.
 set -euo pipefail
 
-MAC_HOST="${MAC_HOST:-mlc@macstudio.fritz.box}"
-SIGN_ID="Developer ID Application: Michael Lechner (BQQQX4TB3B)"
-NOTARY_PROFILE="mlcterm-notary"
-
 [ $# -gt 0 ] || { echo "usage: $0 BINARY ..." >&2; exit 2; }
+for v in MAC_HOST SIGN_ID NOTARY_PROFILE; do
+	[ -n "${!v:-}" ] || { echo "$v is not set — copy .release.env.example to .release.env and fill it in." >&2; exit 1; }
+done
 for f in "$@"; do
 	[ -f "$f" ] || { echo "not found: $f" >&2; exit 1; }
 done
@@ -25,7 +25,7 @@ done
 # allowed" — check before anything is copied.
 if [ -z "${MAC_KEYCHAIN_PASS:-}" ]; then
 	echo "MAC_KEYCHAIN_PASS is not set — the keychain on $MAC_HOST stays locked." >&2
-	echo "  export MAC_KEYCHAIN_PASS='<login password on macstudio>'" >&2
+	echo "  export MAC_KEYCHAIN_PASS='<login password of the Mac>'" >&2
 	exit 1
 fi
 

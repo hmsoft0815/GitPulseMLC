@@ -4,11 +4,15 @@
 #   curl -fsSL https://raw.githubusercontent.com/hmsoft0815/GitPulseMLC/main/install.sh | sh
 #
 # Environment:
-#   GITPULSE_VERSION   install this version (e.g. 1.2.0) instead of the latest
+# Linux binaries come from the GitHub release, macOS binaries from mlcgo.eu,
+# where they are signed and notarized (GitHub only carries Linux and Windows).
+#
+#   GITPULSE_VERSION   Linux: install this version (e.g. 1.3.0) instead of the latest
 #   GITPULSE_DIR       install directory (default: /usr/local/bin if writable, else ~/.local/bin)
 set -eu
 
 REPO="hmsoft0815/GitPulseMLC"
+MAC_DOWNLOADS="https://mlcgo.eu/downloads/gitpulse"
 
 fail() { echo "install.sh: $*" >&2; exit 1; }
 
@@ -42,8 +46,9 @@ latest_version() {
 	sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' "$tmp/latest.json" | head -n 1
 }
 
+# verify FILE SUMSFILE — compare FILE (in $tmp) against its line in SUMSFILE.
 verify() {
-	expected=$(grep " $1\$" "$tmp/checksums.txt" | cut -d ' ' -f 1)
+	expected=$(grep " \*\{0,1\}$1\$" "$tmp/$2" | cut -d ' ' -f 1)
 	[ -n "$expected" ] || fail "no checksum for $1"
 	if command -v sha256sum >/dev/null 2>&1; then
 		actual=$(sha256sum "$tmp/$1" | cut -d ' ' -f 1)
@@ -63,21 +68,38 @@ install_dir() {
 	fi
 }
 
-need tar
+download_linux() {
+	need tar
+	version=${GITPULSE_VERSION:-$(latest_version)}
+	[ -n "$version" ] || fail "could not determine the latest version"
+	archive="gitpulse_${version}_${os}_${arch}.tar.gz"
+	base="https://github.com/$REPO/releases/download/v$version"
+	echo "Downloading gitpulse $version ($os/$arch) ..."
+	fetch "$base/$archive" "$tmp/$archive"
+	fetch "$base/checksums.txt" "$tmp/checksums.txt"
+	verify "$archive" checksums.txt
+	tar -xzf "$tmp/$archive" -C "$tmp" gitpulse
+}
+
+download_macos() {
+	[ -z "${GITPULSE_VERSION:-}" ] || echo "Note: GITPULSE_VERSION is ignored on macOS — mlcgo.eu serves the latest signed build."
+	file="gitpulse-darwin-$arch"
+	echo "Downloading signed gitpulse ($os/$arch) from mlcgo.eu ..."
+	fetch "$MAC_DOWNLOADS/$file" "$tmp/$file"
+	fetch "$MAC_DOWNLOADS/SHA256SUMS" "$tmp/SHA256SUMS"
+	verify "$file" SHA256SUMS
+	mv "$tmp/$file" "$tmp/gitpulse"
+}
+
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
 detect_platform
-version=${GITPULSE_VERSION:-$(latest_version)}
-[ -n "$version" ] || fail "could not determine the latest version"
-archive="gitpulse_${version}_${os}_${arch}.tar.gz"
-base="https://github.com/$REPO/releases/download/v$version"
-
-echo "Downloading gitpulse $version ($os/$arch) ..."
-fetch "$base/$archive" "$tmp/$archive"
-fetch "$base/checksums.txt" "$tmp/checksums.txt"
-verify "$archive"
-tar -xzf "$tmp/$archive" -C "$tmp" gitpulse
+if [ "$os" = darwin ]; then
+	download_macos
+else
+	download_linux
+fi
 
 dir=$(install_dir)
 mkdir -p "$dir"

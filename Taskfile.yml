@@ -1,12 +1,12 @@
 version: '3'
 
+# Hosts and signing identity stay out of this public repo: see .release.env.example.
+dotenv: ['.release.env']
+
 vars:
   VERSION:
     sh: cat VERSION
   LDFLAGS: -s -w -X main.version={{.VERSION}}
-  DOWNLOAD_HOST: mlc@mlcgo.eu
-  DOWNLOAD_DIR: /var/www/html/downloads/gitpulse
-  DOWNLOAD_TARGET: '{{.DOWNLOAD_HOST}}:{{.DOWNLOAD_DIR}}'
 
 tasks:
   default:
@@ -37,17 +37,24 @@ tasks:
           ./cmd/gitpulse
 
   sign:macos:
-    desc: Sign and notarize the macOS binaries in bin/ on macstudio (needs MAC_KEYCHAIN_PASS)
+    desc: Sign and notarize the macOS binaries in bin/ on the Mac from .release.env (needs MAC_KEYCHAIN_PASS)
     deps: [build:cross]
     cmds:
       - scripts/sign-macos.sh bin/gitpulse-darwin-arm64 bin/gitpulse-darwin-amd64
 
   publish:downloads:
-    desc: Build all binaries, sign the macOS ones and upload them to mlcgo.eu/downloads/gitpulse/
+    desc: Build all binaries, sign the macOS ones and upload them with SHA256SUMS to mlcgo.eu/downloads/gitpulse/
     deps: [sign:macos]
+    preconditions:
+      - sh: test -n "$DOWNLOAD_TARGET"
+        msg: "DOWNLOAD_TARGET is not set — see .release.env.example"
+    vars:
+      FILES: gitpulse-darwin-amd64 gitpulse-darwin-arm64 gitpulse-linux-amd64 gitpulse-linux-arm64 gitpulse-windows-amd64.exe
     cmds:
-      - rsync -az bin/gitpulse-darwin-amd64 bin/gitpulse-darwin-arm64 bin/gitpulse-linux-amd64 bin/gitpulse-linux-arm64 bin/gitpulse-windows-amd64.exe {{.DOWNLOAD_TARGET}}/
-      - ssh {{.DOWNLOAD_HOST}} {{.DOWNLOAD_DIR}}/gitpulse-linux-amd64 --version
+      # install.sh verifies the macOS download against this file
+      - cd bin && sha256sum {{.FILES}} > SHA256SUMS
+      - cd bin && rsync -az {{.FILES}} SHA256SUMS "$DOWNLOAD_TARGET/"
+      - curl -fsSL https://mlcgo.eu/downloads/gitpulse/SHA256SUMS | diff - bin/SHA256SUMS && echo "✓ downloads live"
 
   dev:
     desc: Run gitpulse from source (task dev -- --compact)

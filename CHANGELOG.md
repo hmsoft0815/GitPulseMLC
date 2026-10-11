@@ -2,6 +2,11 @@
 
 All notable changes to GitPulseMLC. Details and reasoning live in the project documentation.
 
+## Unreleased
+
+### Changed
+- GitHub releases no longer carry macOS archives; `install.sh` fetches the signed macOS binaries from mlcgo.eu.
+
 ## 1.3.0 — 2026-10-11
 
 ### Added

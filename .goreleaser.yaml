@@ -14,7 +14,9 @@ builds:
     binary: gitpulse
     env:
       - CGO_ENABLED=0
-    goos: [linux, windows, darwin]
+    # No darwin: macOS binaries must be signed and notarized, which happens on
+    # a Mac (task publish:downloads) — they are published on mlcgo.eu only.
+    goos: [linux, windows]
     goarch: [amd64, arm64]
     flags:
       - -trimpath
@@ -63,6 +65,8 @@ snapshot:
 
 release:
   footer: |
+    **macOS:** signed and notarized binaries are on [mlcgo.eu](https://mlcgo.eu/products/gitpulse/), or run `install.sh`.
+
     **Quickstart:** `gitpulse init ~/code && gitpulse` — see the [README](https://github.com/hmsoft0815/GitPulseMLC#quickstart).
 
 changelog:

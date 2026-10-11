@@ -40,10 +40,10 @@ The tool uses an INI-style configuration file (`repos.ini`).
 
 ### [projects]
 Maps project names to absolute filesystem paths.
-Example: `my-tool = /mnt/data2tb/dev/my-tool`
+Example: `my-tool = /home/me/code/my-tool`
 
 ### [general]
-*   **replace_path_prefix**: Prefix to be shortened in the output (e.g., `/mnt/data2tb`).
+*   **replace_path_prefix**: Prefix to be shortened in the output (e.g., `/home/me`).
 *   **replace_with**: The replacement string (e.g., `@`).
 
 ### [settings]
