@@ -27,6 +27,8 @@ const (
 	kindClean
 	kindStale
 	kindNoRemote
+	kindSubmodule
+	kindSubPointer
 )
 
 // statusPart is one piece of the status column, e.g. "↑2".
@@ -63,6 +65,10 @@ func statusParts(s *gitmonitor.RepoStatus) (parts []statusPart, needsAction bool
 	if s.StashCount > 0 {
 		parts = append(parts, statusPart{kindStash, fmt.Sprintf("%d stash", s.StashCount)})
 	}
+	subAction, subPointers := s.SubmoduleAttention()
+	if len(subAction) > 0 {
+		parts = append(parts, statusPart{kindSubmodule, submoduleSummary(subAction)})
+	}
 	needsAction = len(parts) > 0
 	if !needsAction {
 		parts = append(parts, statusPart{kindClean, "CLEAN"})
@@ -70,6 +76,9 @@ func statusParts(s *gitmonitor.RepoStatus) (parts []statusPart, needsAction bool
 
 	if stale > 0 {
 		parts = append(parts, statusPart{kindStale, fmt.Sprintf("%d stale", stale)})
+	}
+	if subPointers > 0 {
+		parts = append(parts, statusPart{kindSubPointer, fmt.Sprintf("%d sub-ptr", subPointers)})
 	}
 	if s.HasNoRemote {
 		parts = append(parts, statusPart{kindNoRemote, "(No Remote)"})
@@ -79,14 +88,16 @@ func statusParts(s *gitmonitor.RepoStatus) (parts []statusPart, needsAction bool
 
 // terminalStyles maps each part kind to its terminal colour.
 var terminalStyles = map[partKind]lipgloss.Style{
-	kindError:    styles.Behind,
-	kindDirty:    styles.Dirty,
-	kindAhead:    styles.Ahead,
-	kindBehind:   styles.Behind,
-	kindStash:    styles.Dirty,
-	kindClean:    styles.Clean,
-	kindStale:    styles.Muted,
-	kindNoRemote: styles.NoRemote,
+	kindError:      styles.Behind,
+	kindDirty:      styles.Dirty,
+	kindAhead:      styles.Ahead,
+	kindBehind:     styles.Behind,
+	kindStash:      styles.Dirty,
+	kindClean:      styles.Clean,
+	kindStale:      styles.Muted,
+	kindNoRemote:   styles.NoRemote,
+	kindSubmodule:  styles.Dirty,
+	kindSubPointer: styles.Muted,
 }
 
 // statusCell renders the STATUS column for the terminal.
@@ -120,4 +131,14 @@ func changedFilesSummary(files map[string]int) string {
 		parts = append(parts, fmt.Sprintf("%d%s", files[k], k))
 	}
 	return " (" + strings.Join(parts, ", ") + ")"
+}
+
+// submoduleSummary renders "SUB .mlcai" or "SUB .mlcai +2" for the
+// submodules that need action.
+func submoduleSummary(paths []string) string {
+	text := "SUB " + paths[0]
+	if len(paths) > 1 {
+		text += fmt.Sprintf(" +%d", len(paths)-1)
+	}
+	return text
 }

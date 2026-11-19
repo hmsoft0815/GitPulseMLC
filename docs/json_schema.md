@@ -18,10 +18,11 @@ You can also find the formal JSON Schema in [schema.json](./schema.json).
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `total` | int | Total number of projects scanned. |
-| `dirty` | int | Number of repositories with uncommitted changes. |
+| `dirty` | int | Number of repositories with uncommitted changes, in the repository or in a submodule. |
 | `ahead` | int | Number of repositories with local commits not yet pushed. |
 | `behind` | int | Number of repositories with remote commits not yet pulled. |
 | `errors` | int | Number of projects that failed to scan (e.g., directory missing). |
+| `submodule_pointers` | int | Number of repositories with a submodule that moved past the commit the parent records, and nothing else to do in it. |
 
 ---
 
@@ -43,6 +44,7 @@ You can also find the formal JSON Schema in [schema.json](./schema.json).
 | `behind` | int | Commits behind the tracking remote branch. |
 | `has_no_remote` | boolean | `true` if the repository has no configured remotes. |
 | `local_branches` | array | List of `BranchInfo` objects for all local branches. |
+| `submodules` | array | List of `SubmoduleInfo` objects; omitted when the repository has none. |
 | `error` | string | Error message if the scan failed (only present on error). |
 
 ---
@@ -57,6 +59,23 @@ You can also find the formal JSON Schema in [schema.json](./schema.json).
 | `behind` | int | Commits behind remote. |
 | `last_commit_at` | string | ISO 8601 timestamp of the last commit on this branch. |
 | `is_stale` | boolean | `true` if the branch is older than 30 days (excluding main/master). |
+
+---
+
+## SubmoduleInfo Object
+
+A submodule is recorded in its parent as one commit hash. A submodule path whose only change is a newer checked-out commit does not make the parent dirty; it is reported here instead.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `path` | string | Path of the submodule, relative to the parent's worktree. |
+| `recorded_commit` | string | Commit the parent's index records. |
+| `current_commit` | string | HEAD of the checked-out submodule (absent if not initialized). |
+| `pointer_ahead` | int | Commits the submodule's HEAD is past the recorded commit. |
+| `pointer_behind` | int | Commits the recorded commit is past the submodule's HEAD (run `git submodule update`). |
+| `pointer_staged` | boolean | `true` if a new pointer is staged in the parent; it then also counts in the parent's `changed_files` as `(submodule)`. |
+| `not_initialized` | boolean | `true` if the submodule is declared but not checked out. |
+| `status` | object | The submodule's own `RepoStatus` (dirty state, branches, stashes, nested submodules). |
 
 ---
 

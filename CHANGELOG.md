@@ -4,7 +4,11 @@ All notable changes to GitPulseMLC. Details and reasoning live in the project do
 
 ## Unreleased
 
+### Added
+- Submodules are scanned: `SUB <path>` marks one with work of its own, `--all` lists each with its pointer state.
+
 ### Changed
+- A submodule whose only change is a newer commit than the parent records shows as `sub-ptr`, not DIRTY.
 - GitHub releases no longer carry macOS archives; `install.sh` fetches the signed macOS binaries from mlcgo.eu.
 
 ## 1.3.0 — 2026-10-11

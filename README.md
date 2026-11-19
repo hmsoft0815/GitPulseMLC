@@ -30,8 +30,10 @@ Reading the status column:
 | `↑2` | 2 local commits not pushed yet | `git push` |
 | `↓3` | 3 commits on the remote you don't have | `git pull` |
 | `1 stash` | Work parked with `git stash` | apply or drop it |
+| `SUB .mlcai` | A submodule has uncommitted, unpushed or stashed work of its own | fix it inside the submodule |
 | `1 stale` | A local branch untouched for 30+ days | delete or finish it |
 | `(No Remote)` | Repository exists only on this machine | add a remote if it matters |
+| `1 sub-ptr` | A submodule moved past the commit the parent records; nothing is lost | commit the new pointer when convenient |
 
 ## Is this for me?
 
@@ -102,7 +104,7 @@ gitpulse init [flags] [DIR ...]  find repositories below DIR and add them to the
 
 Flags:
   --compact      only repositories that need action
-  -v, --all      details for every local branch and stash
+  -v, --all      details for every local branch, stash and submodule
   --jobs N       repositories scanned in parallel (default: one per CPU)
   --progress     show scanning progress (terminal output only)
   --json         JSON output (schema: docs/json_schema.md)

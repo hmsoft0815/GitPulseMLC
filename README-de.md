@@ -30,8 +30,10 @@ So liest du die Statusspalte:
 | `↑2` | 2 lokale Commits, noch nicht gepusht | `git push` |
 | `↓3` | 3 Commits auf dem Remote, die dir fehlen | `git pull` |
 | `1 stash` | Mit `git stash` geparkte Arbeit | anwenden oder löschen |
+| `SUB .mlcai` | Ein Submodule hat selbst nicht committete, nicht gepushte oder geparkte Arbeit | im Submodule erledigen |
 | `1 stale` | Ein lokaler Branch, seit über 30 Tagen unberührt | löschen oder fertigmachen |
 | `(No Remote)` | Repository existiert nur auf diesem Rechner | Remote anlegen, wenn es wichtig ist |
+| `1 sub-ptr` | Ein Submodule ist über den im Eltern-Repo eingetragenen Commit hinaus; nichts geht verloren | neuen Zeiger bei Gelegenheit committen |
 
 ## Ist das was für mich?
 
@@ -102,7 +104,7 @@ gitpulse init [flags] [DIR ...]  Repositories unter DIR finden und in die Config
 
 Flags:
   --compact      nur Repositories mit Handlungsbedarf
-  -v, --all      Details zu jedem lokalen Branch und Stash
+  -v, --all      Details zu jedem lokalen Branch, Stash und Submodule
   --jobs N       so viele Repositories parallel scannen (Standard: eins pro CPU)
   --progress     Scan-Fortschritt anzeigen (nur Terminal-Ausgabe)
   --json         JSON-Ausgabe (Schema: docs/json_schema.md)

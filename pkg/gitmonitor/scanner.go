@@ -110,23 +110,10 @@ func (s *scanner) scanRepo(status *RepoStatus, repo *git.Repository) (*RepoStatu
 		return status, nil
 	}
 
-	status.IsClean = wtStatus.IsClean()
-	for file, s := range wtStatus {
-		if s.Staging != git.Unmodified || s.Worktree != git.Unmodified {
-			status.ModifiedCount++
-			ext := filepath.Ext(file)
-			if ext == "" {
-				ext = "(no ext)"
-			}
-			status.ChangedFiles[ext]++
-		}
-		if s.Worktree == git.Untracked {
-			status.UntrackedCount++
-		}
-		if s.Worktree == git.Deleted || s.Staging == git.Deleted {
-			status.DeletedCount++
-		}
-	}
+	// Submodules: a changed pointer alone is reported per submodule, not as
+	// a modified file of the parent (see SubmoduleInfo).
+	status.Submodules = s.collectSubmodules(status, wt)
+	countWorktreeChanges(status, wtStatus)
 
 	// 4. Retrieve last fetch time from .git/FETCH_HEAD
 	if status.Path != "" {
@@ -189,11 +176,6 @@ func (s *scanner) collectBranchDetails(repo *git.Repository) ([]BranchInfo, erro
 
 // getAheadBehindForBranch calculates how many commits a branch is ahead of or behind its remote tracking branch.
 func (s *scanner) getAheadBehindForBranch(repo *git.Repository, ref *plumbing.Reference) (int, int, error) {
-	localCommit, err := repo.CommitObject(ref.Hash())
-	if err != nil {
-		return 0, 0, err
-	}
-
 	cfg, err := repo.Config()
 	if err != nil {
 		return 0, 0, err
@@ -211,20 +193,28 @@ func (s *scanner) getAheadBehindForBranch(repo *git.Repository, ref *plumbing.Re
 		return 0, 0, nil
 	}
 
-	remoteCommit, err := repo.CommitObject(remoteRef.Hash())
+	return s.aheadBehind(repo, ref.Hash(), remoteRef.Hash())
+}
+
+// aheadBehind counts the commits local has that remote lacks (ahead) and the
+// other way round (behind), measured from their merge base.
+func (s *scanner) aheadBehind(repo *git.Repository, local, remote plumbing.Hash) (int, int, error) {
+	localCommit, err := repo.CommitObject(local)
 	if err != nil {
 		return 0, 0, err
 	}
-
-	// Find the common ancestor (merge base)
+	remoteCommit, err := repo.CommitObject(remote)
+	if err != nil {
+		return 0, 0, err
+	}
 	bases, err := localCommit.MergeBase(remoteCommit)
 	if err != nil || len(bases) == 0 {
 		return 0, 0, nil
 	}
 	base := bases[0]
 
-	ahead, _ := s.countCommitsBetween(repo, base.Hash, localCommit.Hash)
-	behind, _ := s.countCommitsBetween(repo, base.Hash, remoteCommit.Hash)
+	ahead, _ := s.countCommitsBetween(repo, base.Hash, local)
+	behind, _ := s.countCommitsBetween(repo, base.Hash, remote)
 
 	return ahead, behind, nil
 }
@@ -269,4 +259,44 @@ func (s *scanner) countStashes(repo *git.Repository) int {
 	// Currently returns 1 if any stashes exist.
 	// Full counting would require low-level reflog traversal.
 	return 1
+}
+
+// countWorktreeChanges sets IsClean and the change counters from the
+// worktree status. Paths of submodules count only when a new pointer is
+// staged; an unstaged pointer change is reported in Submodules instead.
+func countWorktreeChanges(status *RepoStatus, wtStatus git.Status) {
+	subs := make(map[string]*SubmoduleInfo, len(status.Submodules))
+	for i := range status.Submodules {
+		subs[status.Submodules[i].Path] = &status.Submodules[i]
+	}
+
+	status.IsClean = true
+	for file, fs := range wtStatus {
+		if sub, ok := subs[file]; ok {
+			if fs.Staging == git.Unmodified {
+				continue
+			}
+			sub.PointerStaged = true
+			status.IsClean = false
+			status.ModifiedCount++
+			status.ChangedFiles["(submodule)"]++
+			continue
+		}
+		if fs.Staging == git.Unmodified && fs.Worktree == git.Unmodified {
+			continue
+		}
+		status.IsClean = false
+		status.ModifiedCount++
+		ext := filepath.Ext(file)
+		if ext == "" {
+			ext = "(no ext)"
+		}
+		status.ChangedFiles[ext]++
+		if fs.Worktree == git.Untracked {
+			status.UntrackedCount++
+		}
+		if fs.Worktree == git.Deleted || fs.Staging == git.Deleted {
+			status.DeletedCount++
+		}
+	}
 }

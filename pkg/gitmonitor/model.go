@@ -12,6 +12,9 @@ type Summary struct {
 	Ahead  int `json:"ahead"`
 	Behind int `json:"behind"`
 	Errors int `json:"errors"`
+	// SubmodulePointers counts repositories whose submodules moved past the
+	// commit the parent records, with nothing else to do in them.
+	SubmodulePointers int `json:"submodule_pointers"`
 }
 
 // BranchInfo repräsentiert Informationen über einen lokalen Git-Branch.
@@ -44,6 +47,9 @@ type RepoStatus struct {
 	DeletedCount   int            `json:"deleted_count"`   // Count of deleted files.
 	StashCount     int            `json:"stash_count"`     // Number of stashed changes.
 	ChangedFiles   map[string]int `json:"changed_files"`   // Grouping of changes by file extension (e.g., ".go": 3).
+
+	// --- Submodule ---
+	Submodules []SubmoduleInfo `json:"submodules,omitempty"` // Submodules declared in .gitmodules.
 
 	// --- Synchronisation (Remote) ---
 	RemoteURL        string    `json:"remote_url"`         // URL of the primary remote (usually origin).

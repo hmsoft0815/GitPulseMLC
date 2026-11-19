@@ -78,6 +78,7 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 			if s.StashCount > 0 {
 				fmt.Printf("  └─ %s: %d\n", styles.Dirty.Render("Stashes"), s.StashCount)
 			}
+			printSubmoduleDetails(s.Submodules)
 			for _, b := range s.LocalBranches {
 				prefix := "  ├─"
 				if b.IsHead {
@@ -136,6 +137,10 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 			return ""
 		}())
 		fmt.Printf("  Errors:        [ %s ]\n", renderStat(summary.Errors, styles.Behind))
+		if summary.SubmodulePointers > 0 {
+			fmt.Printf("  Sub-Pointers:  [ %s ] %s\n", renderStat(summary.SubmodulePointers, styles.Muted),
+				styles.Muted.Render("(submodule moved on; commit the pointer in the parent when convenient)"))
+		}
 		fmt.Println(styles.Muted.Render(strings.Repeat("─", 40)))
 	}
 }

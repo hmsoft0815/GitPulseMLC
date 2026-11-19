@@ -153,8 +153,12 @@ func summarize(results []*gitmonitor.RepoStatus) gitmonitor.Summary {
 			summary.Errors++
 			continue
 		}
-		if !s.IsClean {
+		subAction, subPointers := s.SubmoduleAttention()
+		if !s.IsClean || len(subAction) > 0 {
 			summary.Dirty++
+		}
+		if subPointers > 0 {
+			summary.SubmodulePointers++
 		}
 		hasAhead, hasBehind := false, false
 		for _, b := range s.LocalBranches {

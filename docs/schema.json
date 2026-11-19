@@ -48,6 +48,9 @@
         },
         "errors": {
           "type": "integer"
+        },
+        "submodule_pointers": {
+          "type": "integer"
         }
       }
     },
@@ -148,6 +151,12 @@
         },
         "error": {
           "type": "string"
+        },
+        "submodules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SubmoduleInfo"
+          }
         }
       }
     },
@@ -179,6 +188,42 @@
         },
         "is_stale": {
           "type": "boolean"
+        }
+      }
+    },
+    "SubmoduleInfo": {
+      "type": "object",
+      "required": [
+        "path",
+        "recorded_commit",
+        "pointer_ahead",
+        "pointer_behind",
+        "pointer_staged"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "recorded_commit": {
+          "type": "string"
+        },
+        "current_commit": {
+          "type": "string"
+        },
+        "pointer_ahead": {
+          "type": "integer"
+        },
+        "pointer_behind": {
+          "type": "integer"
+        },
+        "pointer_staged": {
+          "type": "boolean"
+        },
+        "not_initialized": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/RepoStatus"
         }
       }
     }
