@@ -19,7 +19,7 @@ gitpulse - Monitor the heartbeat of local Git repositories
 ## DESCRIPTION
 **gitpulse** is a high-performance dashboard designed to monitor a large number of local Git repositories simultaneously. It provides a centralized view of your development environment, ensuring you never lose track of uncommitted changes, unpushed branches, or stale worktrees.
 
-gitpulse only reads your repositories: it never commits, fetches, pulls or pushes. It writes only its own configuration (through the project commands) and a small cache. Its one network request is an anonymous HTTPS check whether a remote is public (see REMOTE VISIBILITY); **--offline** skips it. Third-party projects and remotes on the local network are never checked.
+gitpulse only reads your repositories: it never commits, fetches, pulls or pushes. Where git is installed it asks git for the status of each repository (read-only, without rewriting the index), so .gitattributes, core.autocrlf and core.filemode apply as with `git status`; otherwise it computes the status itself. It writes only its own configuration (through the project commands) and a small cache. Its one network request is an anonymous HTTPS check whether a remote is public (see REMOTE VISIBILITY); **--offline** skips it. Third-party projects and remotes on the local network are never checked.
 
 **Note for Windows Users:**
 Windows Defender or other antivirus tools might flag the generated binary as suspicious because it is unsigned and performs concurrent file system scans. If execution is blocked, you may need to add an exclusion for the binary or its directory.
@@ -67,6 +67,9 @@ Example: `my-tool = /home/me/code/my-tool`
 ### [third_party]
 Other people's repositories, checked out to look at or test; same format. See **gitpulse mark**.
 
+### [hosts]
+Other machines whose repositories join the overview: `name = command that starts gitpulse there`, e.g. `win11 = ssh win11 wsl.exe -d Ubuntu -e /home/me/.local/bin/gitpulse`. gitpulse appends **--json** (and **--offline** when given), runs all hosts in parallel with the local scan and shows each as its own block. A host that fails or exceeds **host_timeout** appears as one ERROR line.
+
 ### [disabled_projects]
 Ignored projects: not scanned, and **gitpulse add** does not add them again. See **gitpulse ignore**.
 
@@ -81,6 +84,8 @@ Each project name must be unique across all sections; of a name that occurs twic
 *   **show_summary**: Toggle the final summary block (default: true).
 *   **compact_mode**: Enable compact mode by default (default: false).
 *   **layout**: Default for **--layout** (default: auto).
+*   **stat_check**: **full** (default) compares tracked files like `git status`; **minimal** compares only size and modification time — much faster on checkouts shared with Windows git (e.g. /mnt/c in WSL), but then shows what Windows git sees: line endings a Windows tool changed go unnoticed.
+*   **host_timeout**: Seconds a host from **[hosts]** may take (default: 180).
 *   **own_remotes**: Comma-separated remotes that are yours, as host (`git.example.com`) or host and owner (`github.com/me`); `*` matches within a segment. Repositories elsewhere are added as third party.
 *   **private_hosts**: Comma-separated glob patterns of Git hosts that count as local network and are never checked online.
 

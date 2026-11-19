@@ -6,7 +6,8 @@
 nicht committete Änderungen, nicht gepushte Commits, vergessene Stashes und verwaiste Branches —
 und welche davon jeder im Internet lesen kann.
 GitPulse liest nur — es committet, fetcht, pullt und pusht nie.
-Einzige Netzwerkanfrage ist eine anonyme Prüfung, ob ein Remote öffentlich ist (`--offline` lässt sie weg).
+Einzige Netzwerkanfrage ist eine anonyme Prüfung, ob ein Remote öffentlich ist (`--offline` lässt sie weg) —
+dazu die Befehle, die du unter `[hosts]` für [andere Rechner](#andere-rechner) einträgst.
 
 ```
 $ gitpulse
@@ -34,6 +35,7 @@ So liest du die Statusspalte:
 | `↓3` | 3 Commits auf dem Remote, die dir fehlen | `git pull` |
 | `1 stash` | Mit `git stash` geparkte Arbeit | anwenden oder löschen |
 | `SUB .mlcai` | Ein Submodule hat selbst nicht committete, nicht gepushte oder geparkte Arbeit | im Submodule erledigen |
+| `EOL (3)` | 3 Dateien unterscheiden sich nur in den Zeilenenden (CRLF ↔ LF) | siehe [Andere Rechner](#andere-rechner) |
 | `1 stale` | Ein lokaler Branch, seit über 30 Tagen unberührt | löschen oder fertigmachen |
 | `1 sub-ptr` | Ein Submodule ist über den im Eltern-Repo eingetragenen Commit hinaus; nichts geht verloren | neuen Zeiger bei Gelegenheit committen |
 
@@ -166,6 +168,34 @@ altes-tool = /home/ich/code/altes-tool
 
 Jeder Name darf nur einmal vorkommen. Steht ein Name doppelt drin, wird nur der letzte Eintrag beobachtet; gitpulse warnt, und `gitpulse list` markiert den anderen als `dup`.
 
+## Andere Rechner
+
+Repositories auf einem anderen Rechner — ein Server, ein zweiter Laptop, WSL auf einem Windows-PC — können in die Übersicht.
+Installiere gitpulse dort, gib ihm eine eigene Config und sag deinem lokalen gitpulse, wie es gestartet wird:
+
+```ini
+[hosts]
+# Name = Befehl, der gitpulse dort startet; gitpulse hängt --json an
+build-server = ssh deploy@build01 gitpulse
+win11        = ssh win11 wsl.exe -d Ubuntu -e /home/ich/.local/bin/gitpulse
+```
+
+Jeder Host bekommt einen eigenen Block (`HOST win11`) unter deinen lokalen Repositories, mit eigenem 3rd-party-Block.
+Die Hosts werden parallel zum lokalen Scan abgefragt. Ein Host, der nicht erreichbar ist, kein gitpulse hat oder länger als
+`host_timeout` braucht (Standard 180 Sekunden), erscheint als eine ERROR-Zeile, statt die Übersicht aufzuhalten. Das entfernte
+gitpulse nutzt seine eigene Config, own_remotes und seinen Sichtbarkeits-Cache; `--offline` wird weitergegeben.
+
+**Checkouts, die Windows mitbenutzt (`/mnt/c` in WSL).** gitpulse fragt git nach dem Status, `.gitattributes`, `core.autocrlf`
+und `core.filemode` gelten also wie bei `git status`. Bei einem Checkout, den auch Windows-git benutzt, kann Linux-git dem
+Index, den Windows-git geschrieben hat, nicht trauen und liest jede Datei neu — ein großes Repository braucht dann Minuten.
+`stat_check = minimal` in der Config dieses Rechners lässt git nur Größe und Änderungszeit vergleichen, meist zehnmal schneller;
+git sieht dann aber, was Windows-git sieht: Dateien, die ein Windows-Tool mit CRLF neu geschrieben hat, wirken unverändert.
+Nimm es, wenn du mit Windows-git committest; bleib beim Standard, wenn du aus WSL committest.
+
+`EOL (3)` markiert Dateien, die sich nur in den Zeilenenden unterscheiden — jede Zeile wirkt geändert, ein Commit würde aber nur
+CRLF und LF tauschen. Meist hat ein Windows-Tool sie in einen Checkout geschrieben, den Linux-git liest. Vor dem Commit
+`core.autocrlf` oder `.gitattributes` setzen.
+
 ## Typische Einsätze
 
 ```bash
@@ -263,6 +293,13 @@ private_hosts = git.example.com, *.corp.example
 own_remotes = github.com/ich, git.example.com
 # Tabelle im Terminal: auto (Standard), wide, narrow oder stacked
 layout = auto
+# full (Standard, wie git status) oder minimal — siehe Andere Rechner
+stat_check = full
+# Sekunden, die ein Host aus [hosts] brauchen darf
+host_timeout = 180
+
+[hosts]
+build-server = ssh deploy@build01 gitpulse
 
 [third_party]
 whisper.cpp = /home/ich/src/whisper.cpp
@@ -276,7 +313,8 @@ Ein vollständig kommentiertes Beispiel liegt in [`config/repos.ini.example`](co
 
 ### Remote-Monitoring
 
-`remote_gitpulse` kopiert das passende gitpulse-Binary und deine Config per SSH auf einen Linux- oder macOS-Server,
+Für andere Rechner in der täglichen Übersicht gibt es [`[hosts]`](#andere-rechner). Für einen einmaligen Blick auf einen
+Server, ohne dort etwas zu installieren, kopiert `remote_gitpulse` das passende gitpulse-Binary und deine Config per SSH auf einen Linux- oder macOS-Server,
 führt es dort aus und räumt danach auf.
 
 ```bash

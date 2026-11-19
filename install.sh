@@ -112,5 +112,5 @@ case ":$PATH:" in
 	*) echo "Note: $dir is not in your PATH — add it, or call $dir/gitpulse directly." ;;
 esac
 echo
-echo "Next: gitpulse init ~/code    # find your repositories"
+echo "Next: gitpulse add ~/code     # find your repositories"
 echo "      gitpulse                # see what needs attention"

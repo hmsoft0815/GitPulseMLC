@@ -16,6 +16,7 @@ import (
 
 	"github.com/hmsoft0815/GitPulseMLC/internal/ui/render"
 	"github.com/hmsoft0815/GitPulseMLC/pkg/config"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
 )
 
 // gitIn runs git in dir with a fixed identity and fails the test on error.
@@ -101,7 +102,7 @@ func renderFixture(t *testing.T) map[string]any {
 	t.Helper()
 	t.Setenv("XDG_CACHE_HOME", t.TempDir()) // never read the user's visibility cache
 	cfg, _ := fixtureProjects(t)
-	results := scanProjects(cfg.Projects, 2, false)
+	results := scanProjects(gitmonitor.NewScanner(), cfg.Projects, 2, false)
 	markThirdParty(results, cfg.ThirdParty)
 	checkVisibility(results, cfg.Settings, true)
 

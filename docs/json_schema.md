@@ -38,6 +38,7 @@ checks real output against [schema.json](./schema.json) and fails on any field t
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `name` | string | The display name of the project. |
+| `host` | string | Name of the remote host from `[hosts]` that reported this repository; absent for local ones. An unreachable host appears as one entry with this name and an `error`. |
 | `third_party` | boolean | `true` if the project is listed in `[third_party]`: somebody else's repository, checked out to look at or test. Its remotes are not checked for visibility. |
 | `path` | string | The absolute filesystem path (or shortened path if replacement settings are used). |
 | `current_branch` | string | Name of the currently checked-out branch. |
@@ -46,6 +47,7 @@ checks real output against [schema.json](./schema.json) and fails on any field t
 | `last_commit_at` | string | ISO 8601 timestamp of the latest commit. |
 | `is_clean` | boolean | `true` if there are no uncommitted changes. |
 | `modified_count` | int | Total count of modified files. |
+| `eol_only_count` | int | Modified files that differ from the index only in line endings (CRLF ↔ LF); they are not in `modified_count` or `changed_files`. |
 | `stash_count` | int | `1` if the stash holds anything, else `0` (entries are not counted yet). |
 | `changed_files` | object | Map of file extensions to counts (e.g., `".go": 3`). |
 | `untracked_count` | int | Count of new files Git does not track yet. |

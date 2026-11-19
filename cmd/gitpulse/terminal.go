@@ -4,12 +4,16 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"golang.org/x/term"
 
 	"github.com/hmsoft0815/GitPulseMLC/internal/ui/render"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/config"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
 )
 
 // terminalWidth returns the width of the terminal stdout writes to, or 0
@@ -29,6 +33,17 @@ func terminalWidth() int {
 		return 0
 	}
 	return w
+}
+
+// newScanner applies the stat_check setting: full (default) or minimal.
+func newScanner(settings config.Settings) (gitmonitor.GitScanner, error) {
+	switch strings.ToLower(strings.TrimSpace(settings.StatCheck)) {
+	case "", "full":
+		return gitmonitor.NewScanner(), nil
+	case "minimal":
+		return gitmonitor.NewScannerWithOptions(gitmonitor.Options{MinimalStat: true}), nil
+	}
+	return nil, fmt.Errorf("unknown stat_check %q — use full or minimal", settings.StatCheck)
 }
 
 // chooseLayout takes --layout, else the layout setting, else auto.

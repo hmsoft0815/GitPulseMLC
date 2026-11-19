@@ -6,7 +6,8 @@
 uncommitted changes, unpushed commits, forgotten stashes and stale branches —
 and which of them anyone on the internet can read.
 GitPulse only reads your repositories — it never commits, fetches, pulls or pushes.
-Its one network request is an anonymous check whether a remote is public (`--offline` skips it).
+Its one network request is an anonymous check whether a remote is public (`--offline` skips it) —
+plus the commands you list under `[hosts]` to include [other machines](#other-machines).
 
 ```
 $ gitpulse
@@ -34,6 +35,7 @@ Reading the status column:
 | `↓3` | 3 commits on the remote you don't have | `git pull` |
 | `1 stash` | Work parked with `git stash` | apply or drop it |
 | `SUB .mlcai` | A submodule has uncommitted, unpushed or stashed work of its own | fix it inside the submodule |
+| `EOL (3)` | 3 files differ only in line endings (CRLF ↔ LF) | see [Other machines](#other-machines) |
 | `1 stale` | A local branch untouched for 30+ days | delete or finish it |
 | `1 sub-ptr` | A submodule moved past the commit the parent records; nothing is lost | commit the new pointer when convenient |
 
@@ -166,6 +168,33 @@ old-tool = /home/me/code/old-tool
 
 Each name must be unique. If a name occurs twice, only the last entry is watched; gitpulse warns, and `gitpulse list` marks the other as `dup`.
 
+## Other machines
+
+Repositories on another machine — a server, a second laptop, WSL on a Windows PC — can join the overview.
+Install gitpulse there, give it its own config, and tell your local gitpulse how to start it:
+
+```ini
+[hosts]
+# name = command that starts gitpulse there; gitpulse appends --json
+build-server = ssh deploy@build01 gitpulse
+win11        = ssh win11 wsl.exe -d Ubuntu -e /home/me/.local/bin/gitpulse
+```
+
+Each host gets its own block (`HOST win11`) below your local repositories, with its own third-party block.
+The hosts are scanned in parallel with the local scan. A host that is unreachable, has no gitpulse or takes longer than
+`host_timeout` (default 180 seconds) appears as one ERROR line instead of holding the overview. The remote gitpulse uses
+its own config, own_remotes and visibility cache; `--offline` is passed on.
+
+**Checkouts shared with Windows (`/mnt/c` in WSL).** gitpulse asks git for the status, so `.gitattributes`,
+`core.autocrlf` and `core.filemode` apply as with `git status`. On a checkout that Windows git also uses, Linux git cannot
+trust the index Windows git wrote and re-reads every file — a large repository can take minutes. `stat_check = minimal` in
+that machine's config makes git compare only size and modification time, typically ten times faster, but git then sees what
+Windows git sees: files a Windows tool rewrote with CRLF look unchanged. Use it if you commit with Windows git; keep the
+default if you commit from WSL.
+
+`EOL (3)` marks files that differ only in line endings — every line looks changed, but a commit would only swap CRLF and LF.
+Usually a Windows tool wrote them into a checkout Linux git reads. Set `core.autocrlf` or `.gitattributes` before committing.
+
 ## Typical uses
 
 ```bash
@@ -263,6 +292,13 @@ private_hosts = git.example.com, *.corp.example
 own_remotes = github.com/me, git.example.com
 # terminal table: auto (default), wide, narrow or stacked
 layout = auto
+# full (default, like git status) or minimal — see Other machines
+stat_check = full
+# seconds a host from [hosts] may take
+host_timeout = 180
+
+[hosts]
+build-server = ssh deploy@build01 gitpulse
 
 [third_party]
 whisper.cpp = /home/me/src/whisper.cpp
@@ -276,7 +312,8 @@ A fully commented example is in [`config/repos.ini.example`](config/repos.ini.ex
 
 ### Remote monitoring
 
-`remote_gitpulse` copies the matching gitpulse binary and your config to a Linux or macOS server via SSH,
+To see other machines in your daily overview, use [`[hosts]`](#other-machines). For a one-off look at a server without
+installing anything there, `remote_gitpulse` copies the matching gitpulse binary and your config to a Linux or macOS server via SSH,
 runs it there and cleans up afterwards.
 
 ```bash

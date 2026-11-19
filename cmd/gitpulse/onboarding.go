@@ -30,7 +30,7 @@ func loadConfigOrExplain(explicit string) *config.Config {
 		fmt.Fprintf(os.Stderr, "Cannot read config %s: %v\n", path, err)
 		os.Exit(1)
 	}
-	if len(cfg.Projects) == 0 {
+	if len(cfg.Projects) == 0 && len(cfg.Hosts) == 0 {
 		fmt.Fprintf(os.Stderr, "No repositories configured in %s.\n\n", path)
 		fmt.Fprintf(os.Stderr, "Add some with:\n  gitpulse add <DIR>     e.g. gitpulse add ~/code\n")
 		os.Exit(1)

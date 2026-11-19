@@ -48,6 +48,7 @@ type htmlPart struct {
 
 type htmlRow struct {
 	Name, Branch, Path, Error string
+	HostStart                 string // heading for the first row of a remote host
 	SectionStart              string // heading shown above this row, e.g. "Third party"
 	Remote                    htmlPart
 	Parts                     []htmlPart
@@ -71,18 +72,20 @@ func HTML(w io.Writer, version string, results []*gitmonitor.RepoStatus, summary
 		Summary:   summary,
 		Compact:   settings.CompactMode,
 	}
-	thirdPartyShown := false
+	thirdPartyShown, currentHost := false, ""
 	for _, s := range results {
 		parts, needsAction := statusParts(s)
 		if settings.CompactMode && !needsAction {
 			report.Hidden++
 			continue
 		}
+		hostHeading := hostStart(s, &currentHost, &thirdPartyShown)
 		row := htmlRow{
+			HostStart:    hostHeading,
 			SectionStart: sectionStart(s, &thirdPartyShown),
 			Name:         s.Name,
 			Branch:       s.CurrentBranch,
-			Path:         ShortenPath(s.Path, settings.ReplacePathPrefix, settings.ReplaceWith),
+			Path:         displayPath(s, settings),
 			Error:        s.ErrorMsg,
 		}
 		remoteCSS := "color:#6b7280;font-size:12px"
@@ -105,6 +108,14 @@ func HTML(w io.Writer, version string, results []*gitmonitor.RepoStatus, summary
 	return nil
 }
 
+// displayPath shortens local paths; remote paths stay as the host reports them.
+func displayPath(s *gitmonitor.RepoStatus, settings config.Settings) string {
+	if s.Host != "" {
+		return s.Path
+	}
+	return ShortenPath(s.Path, settings.ReplacePathPrefix, settings.ReplaceWith)
+}
+
 // sectionStart returns the heading for the first third-party row.
 func sectionStart(s *gitmonitor.RepoStatus, shown *bool) string {
 	if !s.ThirdParty || *shown {
@@ -112,6 +123,16 @@ func sectionStart(s *gitmonitor.RepoStatus, shown *bool) string {
 	}
 	*shown = true
 	return "Third party"
+}
+
+// hostStart returns the heading for the first row of a remote host and
+// resets the third-party heading for it.
+func hostStart(s *gitmonitor.RepoStatus, host *string, thirdPartyShown *bool) string {
+	if s.Host == *host {
+		return ""
+	}
+	*host, *thirdPartyShown = s.Host, false
+	return "Host " + s.Host
 }
 
 var htmlTemplate = template.Must(template.New("report").Parse(`<!DOCTYPE html>
@@ -128,7 +149,8 @@ var htmlTemplate = template.Must(template.New("report").Parse(`<!DOCTYPE html>
 <th style="text-align:left;padding:10px;background:#1f2937;color:#ffffff;font-size:12px;text-transform:uppercase">Path</th>
 </tr></thead>
 <tbody>
-{{range .Rows}}{{if .SectionStart}}<tr><td colspan="5" style="padding:16px 10px 6px 10px;border-bottom:2px solid #d1d5db;font-weight:bold">{{.SectionStart}} <span style="font-weight:normal;color:#6b7280;font-size:12px">checked out to look at or test; local changes are only hints</span></td></tr>
+{{range .Rows}}{{if .HostStart}}<tr><td colspan="5" style="padding:20px 10px 6px 10px;border-bottom:2px solid #1f2937;font-weight:bold;font-size:15px">{{.HostStart}} <span style="font-weight:normal;color:#6b7280;font-size:12px">remote repositories, scanned there</span></td></tr>
+{{end}}{{if .SectionStart}}<tr><td colspan="5" style="padding:16px 10px 6px 10px;border-bottom:2px solid #d1d5db;font-weight:bold">{{.SectionStart}} <span style="font-weight:normal;color:#6b7280;font-size:12px">checked out to look at or test; local changes are only hints</span></td></tr>
 {{end}}<tr>
 <td style="padding:10px;border-bottom:1px solid #e5e7eb"><strong>{{.Name}}</strong></td>
 <td style="padding:10px;border-bottom:1px solid #e5e7eb;font-family:Consolas,Menlo,monospace">{{.Branch}}</td>

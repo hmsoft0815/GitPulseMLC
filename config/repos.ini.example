@@ -39,10 +39,26 @@ compact_mode = false
 # short branch names) → stacked (two lines per repository). Pipes stay wide.
 # layout = auto
 
+# How git compares tracked files (default: full, exactly like git status).
+# minimal compares only size and mtime: about ten times faster on checkouts
+# shared with Windows git (/mnt/c in WSL), but then shows what Windows git
+# sees — line endings a Windows tool changed are not noticed.
+# stat_check = full
+
+# Seconds a host from [hosts] may take before it shows as an error.
+# host_timeout = 180
+
 [third_party]
 # Other people's repositories, checked out to look at or test.
 # Local changes here are hints, not action items; `gitpulse mark NAME 3rd|own` moves them.
 # whisper.cpp = /home/me/src/whisper.cpp
+
+[hosts]
+# Other machines in the same overview: name = command that starts gitpulse
+# there (it has its own config). gitpulse appends --json and, with
+# --offline, --offline. An unreachable host shows as one ERROR line.
+# build-server = ssh deploy@build01 gitpulse
+# win11        = ssh win11 wsl.exe -d Ubuntu -e /home/me/.local/bin/gitpulse
 
 [disabled_projects]
 # Ignored: not scanned, and `gitpulse add` will not add them again.

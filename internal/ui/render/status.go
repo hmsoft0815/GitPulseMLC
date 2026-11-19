@@ -45,8 +45,11 @@ func statusParts(s *gitmonitor.RepoStatus) (parts []statusPart, needsAction bool
 		return []statusPart{{kindError, "ERROR"}}, true
 	}
 
-	if !s.IsClean {
+	if !s.IsClean && (len(s.ChangedFiles) > 0 || s.EOLOnlyCount == 0) {
 		parts = append(parts, statusPart{kindDirty, "DIRTY" + changedFilesSummary(s.ChangedFiles)})
+	}
+	if s.EOLOnlyCount > 0 {
+		parts = append(parts, statusPart{kindDirty, fmt.Sprintf("EOL (%d)", s.EOLOnlyCount)})
 	}
 	ahead, behind, stale := 0, 0, 0
 	for _, b := range s.LocalBranches {

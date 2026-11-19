@@ -188,6 +188,12 @@
         },
         "missing": {
           "type": "boolean"
+        },
+        "eol_only_count": {
+          "type": "integer"
+        },
+        "host": {
+          "type": "string"
         }
       }
     },

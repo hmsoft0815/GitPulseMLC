@@ -33,8 +33,14 @@ func TUI(w io.Writer, results []*gitmonitor.RepoStatus, summary gitmonitor.Summa
 	layout = layout.resolve(cols, opts.Width)
 
 	writeHeader(w, layout, cols, opts.Width)
-	thirdPartyShown := false
+	host, thirdPartyShown := "", false
 	for _, r := range rows {
+		if r.status.Host != host {
+			host, thirdPartyShown = r.status.Host, false
+			fmt.Fprintln(w)
+			fmt.Fprintln(w, fit(styles.Header.Render("HOST "+host)+" "+
+				styles.Muted.Render("— remote repositories, scanned there"), opts.Width))
+		}
 		if r.status.ThirdParty && !thirdPartyShown {
 			thirdPartyShown = true
 			writeThirdPartyHeading(w, opts.Width)

@@ -2,6 +2,21 @@
 
 All notable changes to GitPulseMLC. Details and reasoning live in the project documentation.
 
+## Unreleased
+
+### Added
+- `[hosts]` in the config adds other machines (servers, WSL on Windows) to the overview, each as its own block.
+- `EOL (n)` marks files that differ only in line endings, before a commit would rewrite every line.
+- `stat_check = minimal` makes scans of checkouts shared with Windows git about ten times faster.
+
+### Changed
+- gitpulse asks git for the worktree and branch state when git is installed: up to 40 times faster on large or slow drives.
+- The status now honours `.gitattributes`, `core.autocrlf` and `core.filemode` exactly like `git status`.
+
+### Fixed
+- Behind counts (`↓n`, `behind`, `incoming_commits`) were too low after merges upstream.
+- The `install.sh` hint points to `gitpulse add` instead of `gitpulse init`.
+
 ## 1.5.0 — 2026-11-19
 
 ### Added

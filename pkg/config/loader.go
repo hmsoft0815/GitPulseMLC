@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gopkg.in/ini.v1"
 )
@@ -28,6 +29,17 @@ type Settings struct {
 	OwnRemotes []string
 	// Layout of the terminal table: auto (default), wide, narrow or stacked.
 	Layout string
+	// StatCheck is "full" (default, like git status) or "minimal": git then
+	// compares only size and mtime — for checkouts shared with Windows git.
+	StatCheck string
+	// HostTimeout bounds how long a remote host may take (default 180 s).
+	HostTimeout time.Duration
+}
+
+// Host is a remote machine whose gitpulse output joins the overview.
+type Host struct {
+	Name    string   // Shown as the block heading.
+	Command []string // Starts gitpulse there; gitpulse appends --json.
 }
 
 // Sections of the config file that list projects.
@@ -35,12 +47,14 @@ const (
 	SectionOwn        = "projects"          // Your own projects.
 	SectionThirdParty = "third_party"       // Checked out to look at or test.
 	SectionIgnored    = "disabled_projects" // Remembered, but not scanned.
+	SectionHosts      = "hosts"             // Remote machines: name = command that starts gitpulse there.
 )
 
 // Config holds the mapping of project names to their absolute paths and global settings.
 type Config struct {
 	Projects   map[string]string // Watched projects, own and third party: name → path.
 	ThirdParty map[string]bool   // Names of watched projects that are third party.
+	Hosts      []Host            // Remote machines from [hosts], in file order.
 	Settings   Settings          // Global application settings.
 }
 
@@ -100,6 +114,10 @@ func (m *Manager) Load() (*Config, error) {
 		settings.PrivateHosts = splitList(setSection.Key("private_hosts").String())
 		settings.OwnRemotes = splitList(setSection.Key("own_remotes").String())
 		settings.Layout = setSection.Key("layout").String()
+		settings.StatCheck = setSection.Key("stat_check").String()
+		if secs, err := setSection.Key("host_timeout").Int(); err == nil && secs > 0 {
+			settings.HostTimeout = time.Duration(secs) * time.Second
+		}
 	}
 
 	// 3. Parse General Settings
@@ -109,9 +127,17 @@ func (m *Manager) Load() (*Config, error) {
 		settings.ReplaceWith = genSection.Key("replace_with").String()
 	}
 
+	var hosts []Host
+	for _, key := range cfg.Section(SectionHosts).Keys() {
+		if command := strings.Fields(key.String()); len(command) > 0 {
+			hosts = append(hosts, Host{Name: key.Name(), Command: command})
+		}
+	}
+
 	return &Config{
 		Projects:   projects,
 		ThirdParty: thirdParty,
+		Hosts:      hosts,
 		Settings:   settings,
 	}, nil
 }

@@ -129,6 +129,10 @@ Example: \fImy-app = /home/me/code/my-app\fR
 .br
 Other people's repositories, checked out to look at or test; same format.
 .PP
+.B [hosts]
+.br
+Other machines whose repositories join the overview: name = command that starts gitpulse there (e.g. ssh win11 wsl.exe \-d Ubuntu \-e /home/me/.local/bin/gitpulse). gitpulse appends \-\-json (and \-\-offline when given), runs all hosts in parallel and shows each as its own block; a host that fails or exceeds host_timeout appears as one ERROR line.
+.PP
 .B [disabled_projects]
 .br
 Ignored projects: not scanned, and add does not add them again.
@@ -150,6 +154,10 @@ Each project name must be unique across all sections; of a name that occurs twic
 \fBcompact_mode\fR: Boolean to enable compact mode by default (default: false).
 .br
 \fBlayout\fR: Default for \-\-layout (default: auto).
+.br
+\fBstat_check\fR: full (default) compares tracked files like git status; minimal compares only size and modification time \- much faster on checkouts shared with Windows git, but line endings a Windows tool changed go unnoticed.
+.br
+\fBhost_timeout\fR: Seconds a host from [hosts] may take (default: 180).
 .br
 \fBown_remotes\fR: Comma-separated remotes that are yours, as host or host/owner (e.g. github.com/me); repositories elsewhere are added as third party.
 .br

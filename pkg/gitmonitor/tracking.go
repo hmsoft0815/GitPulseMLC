@@ -103,51 +103,68 @@ func (s *scanner) aheadBehind(repo *git.Repository, local, remote plumbing.Hash)
 // incoming lists the subjects of up to maxIncoming commits on remote that
 // local does not have yet, newest first.
 func (s *scanner) incoming(repo *git.Repository, local, remote plumbing.Hash) []string {
-	base, err := mergeBase(repo, local, remote)
+	have, err := ancestors(repo, local)
 	if err != nil {
 		return nil
 	}
-	iter, err := repo.Log(&git.LogOptions{From: remote})
+	iter, err := repo.Log(&git.LogOptions{From: remote, Order: git.LogOrderCommitterTime})
 	if err != nil {
 		return nil
 	}
 	defer iter.Close()
 	var subjects []string
 	_ = iter.ForEach(func(c *object.Commit) error {
-		if c.Hash == base || len(subjects) == maxIncoming {
+		if len(subjects) == maxIncoming {
 			return errStop
 		}
-		subject, _, _ := strings.Cut(strings.TrimSpace(c.Message), "\n")
-		subjects = append(subjects, subject)
+		if !have[c.Hash] {
+			subject, _, _ := strings.Cut(strings.TrimSpace(c.Message), "\n")
+			subjects = append(subjects, subject)
+		}
 		return nil
 	})
 	return subjects
 }
 
-// countCommitsBetween returns the number of commits from the 'from' hash to
-// the 'to' hash.
+// countCommitsBetween returns how many commits are reachable from to but
+// not from from. Walking back from to until from is first seen would stop
+// too early after a merge: the other side of the merge would be missed.
 func (s *scanner) countCommitsBetween(repo *git.Repository, from, to plumbing.Hash) (int, error) {
 	if from == to {
 		return 0, nil
+	}
+	have, err := ancestors(repo, from)
+	if err != nil {
+		return 0, err
 	}
 	iter, err := repo.Log(&git.LogOptions{From: to})
 	if err != nil {
 		return 0, err
 	}
 	defer iter.Close()
-
 	count := 0
 	err = iter.ForEach(func(c *object.Commit) error {
-		if c.Hash == from {
-			return errStop
+		if !have[c.Hash] {
+			count++
 		}
-		count++
 		return nil
 	})
-	if err != nil && !errors.Is(err, errStop) {
-		return count, err
+	return count, err
+}
+
+// ancestors returns h and every commit reachable from it.
+func ancestors(repo *git.Repository, h plumbing.Hash) (map[plumbing.Hash]bool, error) {
+	iter, err := repo.Log(&git.LogOptions{From: h})
+	if err != nil {
+		return nil, err
 	}
-	return count, nil
+	defer iter.Close()
+	seen := map[plumbing.Hash]bool{}
+	err = iter.ForEach(func(c *object.Commit) error {
+		seen[c.Hash] = true
+		return nil
+	})
+	return seen, err
 }
 
 // gitDirStat looks up a file in the repository's Git directory, which works

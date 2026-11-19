@@ -132,9 +132,17 @@ func main() {
 		log.Fatal(err)
 	}
 	isReportMode := *jsonOutput || *htmlOutput
-	allResults := scanProjects(cfg.Projects, *jobs, *showProgress && !isReportMode)
+	scanner, err := newScanner(cfg.Settings)
+	if err != nil {
+		log.Fatal(err)
+	}
+	waitHosts := startHosts(cfg.Hosts, *offline, cfg.Settings.HostTimeout)
+	allResults := scanProjects(scanner, cfg.Projects, *jobs, *showProgress && !isReportMode)
 	markThirdParty(allResults, cfg.ThirdParty)
 	checkVisibility(allResults, cfg.Settings, *offline)
+	// Remote hosts checked visibility and third party themselves.
+	allResults = append(allResults, waitHosts()...)
+	orderResults(allResults, cfg.Hosts)
 	if *publicOnly {
 		allResults = onlyPublic(allResults)
 	}
@@ -159,7 +167,7 @@ func main() {
 }
 
 // scanProjects scans all projects in parallel and returns them sorted by name.
-func scanProjects(projects map[string]string, jobs int, progress bool) []*gitmonitor.RepoStatus {
+func scanProjects(scanner gitmonitor.GitScanner, projects map[string]string, jobs int, progress bool) []*gitmonitor.RepoStatus {
 	targets := make([]gitmonitor.Target, 0, len(projects))
 	for name, path := range projects {
 		targets = append(targets, gitmonitor.Target{Name: name, Path: path})
@@ -172,7 +180,7 @@ func scanProjects(projects map[string]string, jobs int, progress bool) []*gitmon
 			fmt.Fprintf(os.Stderr, "\rScanning [%d/%d] %-30s", done, len(targets), t.Name)
 		}
 	}
-	results := gitmonitor.ScanAll(gitmonitor.NewScanner(), targets, jobs, onDone)
+	results := gitmonitor.ScanAll(scanner, targets, jobs, onDone)
 	if progress {
 		fmt.Fprintf(os.Stderr, "\r%s\r", strings.Repeat(" ", 60))
 	}

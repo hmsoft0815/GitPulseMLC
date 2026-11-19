@@ -20,11 +20,28 @@ type GitScanner interface {
 	Scan(name, path string) (*RepoStatus, error)
 }
 
-type scanner struct{}
+type scanner struct {
+	opts Options
+}
+
+// Options tune a scanner.
+type Options struct {
+	// MinimalStat makes git compare only size and modification time of
+	// tracked files (core.checkStat=minimal). Much faster on checkouts shared
+	// with Windows (e.g. /mnt/c in WSL), whose index git would otherwise never
+	// trust; but it then reports what Windows git sees — files whose line
+	// endings a Windows tool changed look unchanged.
+	MinimalStat bool
+}
 
 // NewScanner creates and returns a new instance of a GitScanner.
 func NewScanner() GitScanner {
 	return &scanner{}
+}
+
+// NewScannerWithOptions creates a GitScanner with the given options.
+func NewScannerWithOptions(opts Options) GitScanner {
+	return &scanner{opts: opts}
 }
 
 // Scan performs a comprehensive analysis of a Git repository at the given path.
@@ -107,7 +124,7 @@ func (s *scanner) scanRepo(status *RepoStatus, repo *git.Repository) (*RepoStatu
 		return status, nil
 	}
 
-	wtStatus, err := wt.Status()
+	wtStatus, err := worktreeStatus(status.Path, wt, s.opts.MinimalStat)
 	if err != nil {
 		status.Error = fmt.Errorf("failed to get status: %w", err)
 		status.ErrorMsg = status.Error.Error()
@@ -117,7 +134,7 @@ func (s *scanner) scanRepo(status *RepoStatus, repo *git.Repository) (*RepoStatu
 	// Submodules: a changed pointer alone is reported per submodule, not as
 	// a modified file of the parent (see SubmoduleInfo).
 	status.Submodules = s.collectSubmodules(status, wt)
-	countWorktreeChanges(status, wtStatus)
+	countWorktreeChanges(status, wtStatus, eolOnlyChanges(repo, wt, wtStatus))
 
 	// 4. Last fetch and an interrupted merge, read from the Git directory
 	//    (".git" may be a file in submodules and worktrees)
@@ -127,13 +144,30 @@ func (s *scanner) scanRepo(status *RepoStatus, repo *git.Repository) (*RepoStatu
 	_, status.InMergeConflict = gitDirStat(repo, "MERGE_HEAD")
 
 	// 5. Collect details for all local branches
-	status.LocalBranches, _ = s.collectBranchDetails(repo)
-	s.trackHead(repo, head, status)
+	s.branchState(repo, head, status)
 
 	// 6. Count active stashes
 	status.StashCount = s.countStashes(repo)
 
 	return status, nil
+}
+
+// branchState fills LocalBranches and the sync fields of the checked-out
+// branch, through git when it is installed (one call instead of a history
+// walk per branch), otherwise with go-git.
+func (s *scanner) branchState(repo *git.Repository, head *plumbing.Reference, status *RepoStatus) {
+	if status.Path != "" && gitBinary() != "" {
+		if branches, err := gitBranches(status.Path); err == nil {
+			status.LocalBranches = make([]BranchInfo, 0, len(branches))
+			for _, b := range branches {
+				status.LocalBranches = append(status.LocalBranches, b.info)
+			}
+			gitTrackHead(status.Path, branches, status)
+			return
+		}
+	}
+	status.LocalBranches, _ = s.collectBranchDetails(repo)
+	s.trackHead(repo, head, status)
 }
 
 // collectBranchDetails iterates through all local branches and gathers their sync status.
@@ -194,7 +228,8 @@ func (s *scanner) countStashes(repo *git.Repository) int {
 // countWorktreeChanges sets IsClean and the change counters from the
 // worktree status. Paths of submodules count only when a new pointer is
 // staged; an unstaged pointer change is reported in Submodules instead.
-func countWorktreeChanges(status *RepoStatus, wtStatus git.Status) {
+// Files in eolOnly differ only in line endings and count as EOLOnlyCount.
+func countWorktreeChanges(status *RepoStatus, wtStatus git.Status, eolOnly map[string]bool) {
 	subs := make(map[string]*SubmoduleInfo, len(status.Submodules))
 	for i := range status.Submodules {
 		subs[status.Submodules[i].Path] = &status.Submodules[i]
@@ -216,6 +251,10 @@ func countWorktreeChanges(status *RepoStatus, wtStatus git.Status) {
 			continue
 		}
 		status.IsClean = false
+		if eolOnly[file] {
+			status.EOLOnlyCount++
+			continue
+		}
 		status.ModifiedCount++
 		ext := filepath.Ext(file)
 		if ext == "" {

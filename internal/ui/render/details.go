@@ -20,6 +20,10 @@ func writeDetails(w io.Writer, s *gitmonitor.RepoStatus, width int) {
 	if s.StashCount > 0 {
 		out(fmt.Sprintf("  ├─ %s: %d", styles.Dirty.Render("Stashes"), s.StashCount))
 	}
+	if s.EOLOnlyCount > 0 {
+		out(fmt.Sprintf("  ├─ %s: %d %s", styles.Dirty.Render("Line endings"), s.EOLOnlyCount,
+			styles.Muted.Render("file(s) differ only in CRLF/LF — set core.autocrlf or .gitattributes before committing")))
+	}
 	for _, line := range remoteDetailLines(s.Remotes) {
 		out(line)
 	}

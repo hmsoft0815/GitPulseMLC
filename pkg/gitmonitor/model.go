@@ -54,9 +54,10 @@ type BranchInfo struct {
 // RepoStatus repräsentiert den vollständigen Zustand eines Git-Repositories.
 type RepoStatus struct {
 	// --- Identität ---
-	Name       string `json:"name"`        // Ordnername oder Projektname aus INI
-	Path       string `json:"path"`        // Absoluter Pfad auf der Festplatte
-	ThirdParty bool   `json:"third_party"` // Fremdes Repo, nur zum Ansehen/Testen ausgecheckt
+	Name       string `json:"name"`           // Ordnername oder Projektname aus INI
+	Path       string `json:"path"`           // Absoluter Pfad auf der Festplatte
+	ThirdParty bool   `json:"third_party"`    // Fremdes Repo, nur zum Ansehen/Testen ausgecheckt
+	Host       string `json:"host,omitempty"` // Entfernter Host aus [hosts]; leer für lokale Repos
 
 	// --- Branch & Head ---
 	CurrentBranch string       `json:"current_branch"`  // The currently checked-out branch name.
@@ -71,6 +72,7 @@ type RepoStatus struct {
 	UntrackedCount int            `json:"untracked_count"` // Count of new untracked files.
 	DeletedCount   int            `json:"deleted_count"`   // Count of deleted files.
 	StashCount     int            `json:"stash_count"`     // Number of stashed changes.
+	EOLOnlyCount   int            `json:"eol_only_count"`  // Modified files that differ only in line endings (CRLF ↔ LF).
 	ChangedFiles   map[string]int `json:"changed_files"`   // Grouping of changes by file extension (e.g., ".go": 3).
 
 	// --- Submodule ---

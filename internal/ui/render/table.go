@@ -29,8 +29,10 @@ func buildRows(results []*gitmonitor.RepoStatus, settings config.Settings) ([]ro
 	c := columnWidths{name: len("NAME"), branch: len("BRANCH") + 1, remote: len("REMOTE"), status: len("STATUS"), path: len("PATH")}
 	var rows []row
 	for _, s := range results {
-		r := row{status: s, name: s.Name, branch: "???", remote: remoteText(s),
-			path: ShortenPath(s.Path, settings.ReplacePathPrefix, settings.ReplaceWith)}
+		r := row{status: s, name: s.Name, branch: "???", remote: remoteText(s), path: s.Path}
+		if s.Host == "" { // remote paths are not affected by the local prefix
+			r.path = ShortenPath(s.Path, settings.ReplacePathPrefix, settings.ReplaceWith)
+		}
 		if s.ErrorMsg == "" {
 			r.branch = s.CurrentBranch
 		}
