@@ -72,9 +72,11 @@ func (s *scanner) scanRepo(status *RepoStatus, repo *git.Repository) (*RepoStatu
 		status.ChangedFiles = make(map[string]int)
 	}
 	// 1.1 Check if any remotes are configured
-	remotes, err := repo.Remotes()
-	if err == nil && len(remotes) == 0 {
+	status.Remotes = collectRemotes(repo)
+	if len(status.Remotes) == 0 {
 		status.HasNoRemote = true
+	} else {
+		status.RemoteURL = status.Remotes[0].URL
 	}
 
 	// 2. Get HEAD and current branch information

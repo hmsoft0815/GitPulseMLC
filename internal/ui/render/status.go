@@ -26,7 +26,6 @@ const (
 	kindStash
 	kindClean
 	kindStale
-	kindNoRemote
 	kindSubmodule
 	kindSubPointer
 )
@@ -38,8 +37,8 @@ type statusPart struct {
 }
 
 // statusParts lists every reason a repository needs attention, or CLEAN if
-// there is none, followed by informational markers (stale branches, no
-// remote). needsAction is false for CLEAN and informational markers alone.
+// there is none, followed by informational markers (stale branches,
+// submodule pointers). needsAction is false for CLEAN and informational markers alone.
 func statusParts(s *gitmonitor.RepoStatus) (parts []statusPart, needsAction bool) {
 	if s.ErrorMsg != "" {
 		return []statusPart{{kindError, "ERROR"}}, true
@@ -80,9 +79,6 @@ func statusParts(s *gitmonitor.RepoStatus) (parts []statusPart, needsAction bool
 	if subPointers > 0 {
 		parts = append(parts, statusPart{kindSubPointer, fmt.Sprintf("%d sub-ptr", subPointers)})
 	}
-	if s.HasNoRemote {
-		parts = append(parts, statusPart{kindNoRemote, "(No Remote)"})
-	}
 	return parts, needsAction
 }
 
@@ -95,7 +91,6 @@ var terminalStyles = map[partKind]lipgloss.Style{
 	kindStash:      styles.Dirty,
 	kindClean:      styles.Clean,
 	kindStale:      styles.Muted,
-	kindNoRemote:   styles.NoRemote,
 	kindSubmodule:  styles.Dirty,
 	kindSubPointer: styles.Muted,
 }

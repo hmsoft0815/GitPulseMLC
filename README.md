@@ -8,18 +8,19 @@ GitPulse only reads your repositories — it never commits, pulls or pushes.
 
 ```
 $ gitpulse
-NAME          BRANCH   STATUS               PATH
-──────────────────────────────────────────────────────────────
-api-server    main     ↑2                   ~/code/api-server
-blog          main     CLEAN 1 stale        ~/code/blog
-dotfiles      main     CLEAN                ~/code/dotfiles
-invoice-tool  main     1 stash              ~/code/invoice-tool
-webshop       main     DIRTY (1.css, 2.go)  ~/code/webshop
+NAME          BRANCH   REMOTE         STATUS               PATH
+──────────────────────────────────────────────────────────────────────────────
+api-server    main     gitlab priv    ↑2                   ~/code/api-server
+blog          main     github pub     CLEAN 1 stale        ~/code/blog
+dotfiles      main     —              CLEAN                ~/code/dotfiles
+invoice-tool  main     nas.local lan  1 stash              ~/code/invoice-tool
+webshop       main     github pub +1  DIRTY (1.css, 2.go)  ~/code/webshop
 
 SUMMARY:
   Total Projects: 5
   Dirty:         [ 1 ] (Action required!)
   Ahead:         [ 1 ] (Need to push)
+  Public:        [ 2 ] (readable by anyone)
 ```
 
 Reading the status column:
@@ -32,8 +33,25 @@ Reading the status column:
 | `1 stash` | Work parked with `git stash` | apply or drop it |
 | `SUB .mlcai` | A submodule has uncommitted, unpushed or stashed work of its own | fix it inside the submodule |
 | `1 stale` | A local branch untouched for 30+ days | delete or finish it |
-| `(No Remote)` | Repository exists only on this machine | add a remote if it matters |
 | `1 sub-ptr` | A submodule moved past the commit the parent records; nothing is lost | commit the new pointer when convenient |
+
+Reading the remote column — who can read the repository:
+
+| Remote | Meaning |
+|---|---|
+| `github pub` | Anyone can read it without logging in — check that no secrets or internal code are in it |
+| `gitlab priv` | External host that refused an anonymous read (private, or GitLab "internal") |
+| `nas.local lan` | Path or host on your local network: private by definition, never checked online |
+| `github ?` | Not known: `--offline` without a cached result, or the host was unreachable |
+| `—` | No remote: the repository exists only on this machine |
+| `… +1` | One more remote; the column shows the most open one, `--all` lists them all |
+
+Local network means: a file path, a host name without a dot, `.local`, `.lan`, `.home`, `.internal`,
+`.fritz.box`, a private IP, or a host listed in `private_hosts`.
+For every other host, gitpulse asks anonymously for the repository's refs over HTTPS
+(`/info/refs?service=git-upload-pack`) — the same request `git clone` makes, without your credentials,
+Git config or credential helpers. SSH aliases from `~/.ssh/config` are resolved first.
+Results are cached for 7 days in the user cache directory (`~/.cache/gitpulse/visibility.json` on Linux).
 
 ## Is this for me?
 
@@ -104,8 +122,10 @@ gitpulse init [flags] [DIR ...]  find repositories below DIR and add them to the
 
 Flags:
   --compact      only repositories that need action
-  -v, --all      details for every local branch, stash and submodule
+  -v, --all      details for every remote, local branch, stash and submodule
   --jobs N       repositories scanned in parallel (default: one per CPU)
+  --public       only repositories with a publicly readable remote
+  --offline      do not check online whether remotes are public; use cached results
   --progress     show scanning progress (terminal output only)
   --json         JSON output (schema: docs/json_schema.md)
   --html         high-contrast HTML report, e.g. for e-mail
@@ -141,6 +161,8 @@ replace_with = ~
 column_name_width = 25
 show_summary = true
 compact_mode = false
+# hosts that are private although they look external (glob patterns)
+private_hosts = git.example.com, *.corp.example
 
 [disabled_projects]
 # moved here: not scanned, but remembered

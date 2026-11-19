@@ -3,7 +3,11 @@
 
 package gitmonitor
 
-import "time"
+import (
+	"time"
+
+	"github.com/hmsoft0815/GitPulseMLC/pkg/visibility"
+)
 
 // Summary holds aggregate statistics for multiple repositories.
 type Summary struct {
@@ -15,6 +19,17 @@ type Summary struct {
 	// SubmodulePointers counts repositories whose submodules moved past the
 	// commit the parent records, with nothing else to do in them.
 	SubmodulePointers int `json:"submodule_pointers"`
+	// Public counts repositories with at least one anonymously readable remote.
+	Public int `json:"public"`
+}
+
+// RemoteInfo describes one configured remote. Host and Visibility are empty
+// until a visibility.Checker has looked at the remote.
+type RemoteInfo struct {
+	Name       string                `json:"name"`                 // Remote name, e.g. "origin".
+	URL        string                `json:"url"`                  // Fetch URL without credentials.
+	Host       string                `json:"host,omitempty"`       // Real host, SSH aliases resolved.
+	Visibility visibility.Visibility `json:"visibility,omitempty"` // Who can read this remote.
 }
 
 // BranchInfo repräsentiert Informationen über einen lokalen Git-Branch.
@@ -52,15 +67,18 @@ type RepoStatus struct {
 	Submodules []SubmoduleInfo `json:"submodules,omitempty"` // Submodules declared in .gitmodules.
 
 	// --- Synchronisation (Remote) ---
-	RemoteURL        string    `json:"remote_url"`         // URL of the primary remote (usually origin).
-	RemoteBranchName string    `json:"remote_branch_name"` // The remote branch being tracked (e.g., "origin/main").
-	IsTracking       bool      `json:"is_tracking"`        // True if the current branch tracks a remote branch.
-	Ahead            int       `json:"ahead"`              // Number of local commits to push.
-	Behind           int       `json:"behind"`             // Number of remote commits to pull.
-	IncomingCommits  []string  `json:"incoming_commits"`   // List of recent commit messages from remote.
-	IsDiverged       bool      `json:"is_diverged"`        // True if both ahead and behind (requires merge).
-	LastFetchAt      time.Time `json:"last_fetch_at"`      // Timestamp of the last 'git fetch'.
-	HasRemoteUpdates bool      `json:"has_remote_updates"` // Flag for UI to indicate remote changes.
+	Remotes []RemoteInfo `json:"remotes,omitempty"` // Configured remotes, "origin" first.
+	// Visibility of the most open remote; "none" without remotes, empty if not checked.
+	Visibility       visibility.Visibility `json:"visibility,omitempty"`
+	RemoteURL        string                `json:"remote_url"`         // URL of the primary remote (usually origin).
+	RemoteBranchName string                `json:"remote_branch_name"` // The remote branch being tracked (e.g., "origin/main").
+	IsTracking       bool                  `json:"is_tracking"`        // True if the current branch tracks a remote branch.
+	Ahead            int                   `json:"ahead"`              // Number of local commits to push.
+	Behind           int                   `json:"behind"`             // Number of remote commits to pull.
+	IncomingCommits  []string              `json:"incoming_commits"`   // List of recent commit messages from remote.
+	IsDiverged       bool                  `json:"is_diverged"`        // True if both ahead and behind (requires merge).
+	LastFetchAt      time.Time             `json:"last_fetch_at"`      // Timestamp of the last 'git fetch'.
+	HasRemoteUpdates bool                  `json:"has_remote_updates"` // Flag for UI to indicate remote changes.
 
 	// --- Kritische Zustände ---
 	InMergeConflict bool `json:"in_merge_conflict"` // True if a merge conflict is active.

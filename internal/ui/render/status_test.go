@@ -29,7 +29,7 @@ func TestStatusCell(t *testing.T) {
 		}}, "↑3 ↓3", true},
 		{"stash", gitmonitor.RepoStatus{IsClean: true, StashCount: 1}, "1 stash", true},
 		{"stale is info only", gitmonitor.RepoStatus{IsClean: true, LocalBranches: []gitmonitor.BranchInfo{{IsStale: true}}}, "CLEAN 1 stale", false},
-		{"no remote is info only", gitmonitor.RepoStatus{IsClean: true, HasNoRemote: true}, "CLEAN (No Remote)", false},
+		{"no remote is shown in the REMOTE column", gitmonitor.RepoStatus{IsClean: true, HasNoRemote: true}, "CLEAN", false},
 		{"submodule pointer is info only", gitmonitor.RepoStatus{IsClean: true, Submodules: []gitmonitor.SubmoduleInfo{
 			{Path: ".mlcai", RecordedCommit: "a", CurrentCommit: "b", Status: &gitmonitor.RepoStatus{IsClean: true}},
 		}}, "CLEAN 1 sub-ptr", false},

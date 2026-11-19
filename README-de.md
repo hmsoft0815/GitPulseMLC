@@ -8,18 +8,19 @@ GitPulse liest nur — es committet, pullt und pusht nie.
 
 ```
 $ gitpulse
-NAME          BRANCH   STATUS               PATH
-──────────────────────────────────────────────────────────────
-api-server    main     ↑2                   ~/code/api-server
-blog          main     CLEAN 1 stale        ~/code/blog
-dotfiles      main     CLEAN                ~/code/dotfiles
-invoice-tool  main     1 stash              ~/code/invoice-tool
-webshop       main     DIRTY (1.css, 2.go)  ~/code/webshop
+NAME          BRANCH   REMOTE         STATUS               PATH
+──────────────────────────────────────────────────────────────────────────────
+api-server    main     gitlab priv    ↑2                   ~/code/api-server
+blog          main     github pub     CLEAN 1 stale        ~/code/blog
+dotfiles      main     —              CLEAN                ~/code/dotfiles
+invoice-tool  main     nas.local lan  1 stash              ~/code/invoice-tool
+webshop       main     github pub +1  DIRTY (1.css, 2.go)  ~/code/webshop
 
 SUMMARY:
   Total Projects: 5
   Dirty:         [ 1 ] (Action required!)
   Ahead:         [ 1 ] (Need to push)
+  Public:        [ 2 ] (readable by anyone)
 ```
 
 So liest du die Statusspalte:
@@ -32,8 +33,25 @@ So liest du die Statusspalte:
 | `1 stash` | Mit `git stash` geparkte Arbeit | anwenden oder löschen |
 | `SUB .mlcai` | Ein Submodule hat selbst nicht committete, nicht gepushte oder geparkte Arbeit | im Submodule erledigen |
 | `1 stale` | Ein lokaler Branch, seit über 30 Tagen unberührt | löschen oder fertigmachen |
-| `(No Remote)` | Repository existiert nur auf diesem Rechner | Remote anlegen, wenn es wichtig ist |
 | `1 sub-ptr` | Ein Submodule ist über den im Eltern-Repo eingetragenen Commit hinaus; nichts geht verloren | neuen Zeiger bei Gelegenheit committen |
+
+So liest du die Remote-Spalte — wer das Repository lesen kann:
+
+| Remote | Bedeutung |
+|---|---|
+| `github pub` | Jeder kann es ohne Anmeldung lesen — prüfen, dass keine Secrets oder internen Inhalte drin sind |
+| `gitlab priv` | Externer Host, der anonymes Lesen ablehnt (privat oder GitLab „internal“) |
+| `nas.local lan` | Pfad oder Host im lokalen Netz: per Definition privat, wird nie online geprüft |
+| `github ?` | Unbekannt: `--offline` ohne Ergebnis im Cache, oder der Host war nicht erreichbar |
+| `—` | Kein Remote: das Repository existiert nur auf diesem Rechner |
+| `… +1` | Ein weiteres Remote; die Spalte zeigt das offenste, `--all` listet alle |
+
+Lokales Netz heißt: ein Dateipfad, ein Hostname ohne Punkt, `.local`, `.lan`, `.home`, `.internal`,
+`.fritz.box`, eine private IP oder ein Host aus `private_hosts`.
+Bei allen anderen Hosts fragt gitpulse anonym per HTTPS die Refs des Repositories ab
+(`/info/refs?service=git-upload-pack`) — dieselbe Anfrage wie `git clone`, ohne deine Zugangsdaten,
+Git-Config oder Credential-Helper. SSH-Aliase aus `~/.ssh/config` werden vorher aufgelöst.
+Das Ergebnis wird 7 Tage im Cache-Verzeichnis des Benutzers gehalten (unter Linux `~/.cache/gitpulse/visibility.json`).
 
 ## Ist das was für mich?
 
@@ -104,8 +122,10 @@ gitpulse init [flags] [DIR ...]  Repositories unter DIR finden und in die Config
 
 Flags:
   --compact      nur Repositories mit Handlungsbedarf
-  -v, --all      Details zu jedem lokalen Branch, Stash und Submodule
+  -v, --all      Details zu jedem Remote, lokalen Branch, Stash und Submodule
   --jobs N       so viele Repositories parallel scannen (Standard: eins pro CPU)
+  --public       nur Repositories mit öffentlich lesbarem Remote
+  --offline      nicht online prüfen, ob Remotes öffentlich sind; Ergebnisse aus dem Cache nehmen
   --progress     Scan-Fortschritt anzeigen (nur Terminal-Ausgabe)
   --json         JSON-Ausgabe (Schema: docs/json_schema.md)
   --html         kontrastreicher HTML-Bericht, z. B. für E-Mails
@@ -141,6 +161,8 @@ replace_with = ~
 column_name_width = 25
 show_summary = true
 compact_mode = false
+# Hosts, die privat sind, obwohl sie extern aussehen (Glob-Muster)
+private_hosts = git.example.com, *.corp.example
 
 [disabled_projects]
 # hierher verschoben: wird nicht gescannt, bleibt aber gemerkt

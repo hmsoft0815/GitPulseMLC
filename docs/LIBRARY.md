@@ -81,6 +81,24 @@ func find() {
 }
 ```
 
+### 4. `visibility`
+
+Tells whether a Git remote can be read by anyone. Remotes on the local network (file paths, hosts without a dot, `.local`/`.lan`, private IPs, configured patterns) are `local` without any network access; for other hosts an anonymous HTTPS request to the smart HTTP endpoint decides between `public` and `private`. Results are cached.
+
+```go
+import "github.com/hmsoft0815/GitPulseMLC/pkg/visibility"
+
+checker := visibility.NewChecker(visibility.Options{
+    PrivateHosts: []string{"git.example.com"},
+    CachePath:    visibility.DefaultCachePath(),
+})
+res := checker.Check(ctx, "git@github.com:owner/repo.git")
+fmt.Println(res.Host, res.Visibility) // github.com public
+_ = checker.Save()
+```
+
+The scanner fills `RepoStatus.Remotes` with names and credential-free URLs; it does not touch the network. Run a `Checker` over them to fill `Host` and `Visibility`.
+
 ## JSON Export
 
 All models in `pkg/gitmonitor` are equipped with standard `json` struct tags. You can easily generate the same data format used by the CLI:

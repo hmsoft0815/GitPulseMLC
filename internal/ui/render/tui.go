@@ -24,6 +24,7 @@ type rowInfo struct {
 func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *config.Config, details bool) {
 	maxNameLen := len("NAME")
 	maxBranchLen := len("BRANCH") + 1
+	maxRemoteLen := len("REMOTE")
 	maxStatusLen := len("STATUS")
 
 	var toDisplay []rowInfo
@@ -41,6 +42,7 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 			if status.ErrorMsg == "" && len(status.CurrentBranch) > maxBranchLen {
 				maxBranchLen = len(status.CurrentBranch)
 			}
+			maxRemoteLen = max(maxRemoteLen, lipgloss.Width(remoteText(status)))
 			sLen := lipgloss.Width(info.statusStr)
 			if sLen > maxStatusLen {
 				maxStatusLen = sLen
@@ -50,14 +52,16 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 
 	styles.ColName = styles.ColName.Width(maxNameLen + 2)
 	styles.ColBranch = styles.ColBranch.Width(maxBranchLen + 2)
+	styles.ColRemote = styles.ColRemote.Width(maxRemoteLen + 2)
 	styles.ColStatus = styles.ColStatus.Width(maxStatusLen + 2)
 
-	fmt.Printf("%s%s%s%s\n",
+	fmt.Printf("%s%s%s%s%s\n",
 		styles.ColName.Render(styles.Header.Render("NAME")),
 		styles.ColBranch.Render(styles.Header.Render("BRANCH")),
+		styles.ColRemote.Render(styles.Header.Render("REMOTE")),
 		styles.ColStatus.Render(styles.Header.Render("STATUS")),
 		styles.Header.Render("PATH"))
-	fmt.Println(styles.Muted.Render(strings.Repeat("─", maxNameLen+maxBranchLen+maxStatusLen+60)))
+	fmt.Println(styles.Muted.Render(strings.Repeat("─", maxNameLen+maxBranchLen+maxRemoteLen+maxStatusLen+60)))
 
 	for _, info := range toDisplay {
 		s := info.status
@@ -68,9 +72,10 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 
 		displayPath := ShortenPath(s.Path, cfg.Settings.ReplacePathPrefix, cfg.Settings.ReplaceWith)
 
-		fmt.Printf("%s%s%s%s\n",
+		fmt.Printf("%s%s%s%s%s\n",
 			styles.ColName.Render(styles.Header.Render(s.Name)),
 			styles.ColBranch.Render(styles.Branch.Render(branch)),
+			styles.ColRemote.Render(remoteStyle(s.Visibility).Render(remoteText(s))),
 			styles.ColStatus.Render(info.statusStr),
 			styles.Path.Render(displayPath))
 
@@ -78,6 +83,7 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 			if s.StashCount > 0 {
 				fmt.Printf("  └─ %s: %d\n", styles.Dirty.Render("Stashes"), s.StashCount)
 			}
+			printRemoteDetails(s.Remotes)
 			printSubmoduleDetails(s.Submodules)
 			for _, b := range s.LocalBranches {
 				prefix := "  ├─"
@@ -137,6 +143,10 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 			return ""
 		}())
 		fmt.Printf("  Errors:        [ %s ]\n", renderStat(summary.Errors, styles.Behind))
+		if summary.Public > 0 {
+			fmt.Printf("  Public:        [ %s ] %s\n", renderStat(summary.Public, styles.Public),
+				styles.Muted.Render("(readable by anyone)"))
+		}
 		if summary.SubmodulePointers > 0 {
 			fmt.Printf("  Sub-Pointers:  [ %s ] %s\n", renderStat(summary.SubmodulePointers, styles.Muted),
 				styles.Muted.Render("(submodule moved on; commit the pointer in the parent when convenient)"))

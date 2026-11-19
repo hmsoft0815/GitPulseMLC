@@ -6,6 +6,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -27,6 +28,7 @@ test3 = /path/to/test3/.git
 column_name_width = 30
 show_summary = false
 show_icons = false
+private_hosts = git.example.com, , *.corp.example
 `
 	if _, err := tmpFile.WriteString(content); err != nil {
 		t.Fatalf("failed to write to temp file: %v", err)
@@ -37,6 +39,10 @@ show_icons = false
 	cfg, err := LoadConfig(tmpFile.Name())
 	if err != nil {
 		t.Fatalf("LoadConfig failed: %v", err)
+	}
+
+	if got := strings.Join(cfg.Settings.PrivateHosts, "|"); got != "git.example.com|*.corp.example" {
+		t.Errorf("PrivateHosts = %q, want git.example.com|*.corp.example", got)
 	}
 
 	if len(cfg.Projects) != 3 {

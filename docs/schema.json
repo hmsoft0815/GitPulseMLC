@@ -51,6 +51,9 @@
         },
         "submodule_pointers": {
           "type": "integer"
+        },
+        "public": {
+          "type": "integer"
         }
       }
     },
@@ -157,6 +160,22 @@
           "items": {
             "$ref": "#/definitions/SubmoduleInfo"
           }
+        },
+        "remotes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RemoteInfo"
+          }
+        },
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "public",
+            "private",
+            "local",
+            "unknown",
+            "none"
+          ]
         }
       }
     },
@@ -224,6 +243,33 @@
         },
         "status": {
           "$ref": "#/definitions/RepoStatus"
+        }
+      }
+    },
+    "RemoteInfo": {
+      "type": "object",
+      "required": [
+        "name",
+        "url"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "public",
+            "private",
+            "local",
+            "unknown"
+          ]
         }
       }
     }

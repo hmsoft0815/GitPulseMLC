@@ -19,6 +19,9 @@ type Settings struct {
 	CompactMode       bool   // If true, only shows repositories that need attention.
 	ReplacePathPrefix string // Prefix to replace in display paths.
 	ReplaceWith       string // Replacement string for the prefix.
+	// PrivateHosts are glob patterns of Git hosts that count as local network
+	// and are never probed for public access (e.g. "git.example.com, *.corp").
+	PrivateHosts []string
 }
 
 // Config holds the mapping of project names to their absolute paths and global settings.
@@ -80,6 +83,7 @@ func (m *Manager) Load() (*Config, error) {
 		if val, err := setSection.Key("compact_mode").Bool(); err == nil {
 			settings.CompactMode = val
 		}
+		settings.PrivateHosts = splitList(setSection.Key("private_hosts").String())
 	}
 
 	// 3. Parse General Settings
@@ -93,6 +97,17 @@ func (m *Manager) Load() (*Config, error) {
 		Projects: projects,
 		Settings: settings,
 	}, nil
+}
+
+// splitList splits a comma-separated value and drops empty items.
+func splitList(value string) []string {
+	var items []string
+	for _, item := range strings.Split(value, ",") {
+		if item = strings.TrimSpace(item); item != "" {
+			items = append(items, item)
+		}
+	}
+	return items
 }
 
 // AddProject adds or updates a project in the configuration.

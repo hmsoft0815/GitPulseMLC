@@ -18,13 +18,19 @@ Windows Defender or other antivirus tools might flag the generated binary as sus
 .SH OPTIONS
 .TP
 .BR \-v ", " \-\-all
-Enable verbose mode. Displays details for all local branches, including ahead/behind counts relative to their tracking branches, and information about active stashes.
+Enable verbose mode. Displays details for all remotes and submodules, all local branches, including ahead/behind counts relative to their tracking branches, and information about active stashes.
 .TP
 .B \-\-compact
 Enable compact mode. Only repositories that require action (dirty state, ahead/behind commits, or stashes) will be displayed. Clean repositories are hidden.
 .TP
 .BI \-\-jobs " N"
 Scan up to N repositories in parallel (default: one per CPU). Lower it on slow disks.
+.TP
+.B \-\-public
+Only show repositories with a publicly readable remote.
+.TP
+.B \-\-offline
+Do not check online whether remotes are public; use cached results only.
 .TP
 .B \-\-progress
 Show a real-time scanning progress indicator on stderr. Only applicable in TUI mode.
@@ -81,6 +87,20 @@ Example: \fImy-app = /home/me/code/my-app\fR
 \fBshow_summary\fR: Boolean to toggle the final summary block (default: true).
 .br
 \fBcompact_mode\fR: Boolean to enable compact mode by default (default: false).
+.br
+\fBprivate_hosts\fR: Comma-separated glob patterns of Git hosts that count as local network and are never checked online.
+.SH REMOTE VISIBILITY
+The REMOTE column shows who can read a repository:
+.B pub
+(anyone, without credentials),
+.B priv
+(external host that refused an anonymous read),
+.B lan
+(file path or host on the local network, never checked online),
+.B ?
+(unknown) or a dash (no remote). With several remotes the most open one is shown.
+External hosts are checked with an anonymous HTTPS request to /info/refs?service=git-upload-pack, without Git configuration or credentials; SSH aliases are resolved with ssh \-G first.
+Results are cached for 7 days in the user cache directory (gitpulse/visibility.json).
 .SH FILES
 .TP
 .I config/repos.ini

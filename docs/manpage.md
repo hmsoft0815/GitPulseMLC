@@ -17,9 +17,11 @@ The tool operates on a "Read-Only" principle, meaning it does not modify any fil
 Windows Defender or other antivirus tools might flag the generated binary as suspicious because it is unsigned and performs concurrent file system scans. If execution is blocked, you may need to add an exclusion for the binary or its directory.
 
 ## OPTIONS
-*   **-v, --all**: Enable verbose mode. Displays details for all local branches and active stashes.
+*   **-v, --all**: Enable verbose mode. Displays details for all remotes, local branches, submodules and active stashes.
 *   **--compact**: Enable compact mode. Only repositories that require action are displayed.
 *   **--jobs N**: Scan up to N repositories in parallel (default: one per CPU). Lower it on slow disks.
+*   **--public**: Only show repositories with a publicly readable remote.
+*   **--offline**: Do not check online whether remotes are public; use cached results only.
 *   **--progress**: Show a real-time scanning progress indicator on stderr.
 *   **--html**: Output results as a standalone, high-contrast HTML report.
 *   **--json**: Output results in JSON format.
@@ -50,6 +52,10 @@ Example: `my-tool = /home/me/code/my-tool`
 *   **column_name_width**: Minimum width for the project name column (default: 25).
 *   **show_summary**: Toggle the final summary block (default: true).
 *   **compact_mode**: Enable compact mode by default (default: false).
+*   **private_hosts**: Comma-separated glob patterns of Git hosts that count as local network and are never checked online.
+
+## REMOTE VISIBILITY
+The REMOTE column shows who can read a repository: **pub** (anyone, without credentials), **priv** (external host that refused an anonymous read), **lan** (file path or host on the local network, never checked online), **?** (unknown) or **—** (no remote). With several remotes the most open one is shown. External hosts are checked with an anonymous HTTPS request to `/info/refs?service=git-upload-pack`, without Git configuration or credentials; SSH aliases are resolved with `ssh -G` first. Results are cached for 7 days in the user cache directory (`gitpulse/visibility.json`).
 
 ## FILES
 *   `config/repos.ini`: Local configuration.

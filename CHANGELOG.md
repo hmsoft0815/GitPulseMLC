@@ -6,8 +6,12 @@ All notable changes to GitPulseMLC. Details and reasoning live in the project do
 
 ### Added
 - Submodules are scanned: `SUB <path>` marks one with work of its own, `--all` lists each with its pointer state.
+- A REMOTE column shows whether a repository is public, private, on the local network or has no remote.
+- `--public` lists only publicly readable repositories; `--offline` skips the online check and uses cached results.
+- `private_hosts` in the config marks Git hosts that are private although they look external.
 
 ### Changed
+- The `(No Remote)` marker moved from the status column to the REMOTE column (`—`).
 - A submodule whose only change is a newer commit than the parent records shows as `sub-ptr`, not DIRTY.
 - GitHub releases no longer carry macOS archives; `install.sh` fetches the signed macOS binaries from mlcgo.eu.
 

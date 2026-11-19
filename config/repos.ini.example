@@ -25,6 +25,11 @@ show_summary = true
 # Action required = Dirty state, Ahead/Behind commits, or Stashes.
 compact_mode = false
 
+# Git hosts that are private although they look external, as glob patterns.
+# gitpulse never checks these online. File paths, hosts without a dot,
+# .local/.lan/.home/.internal/.fritz.box and private IPs are local anyway.
+# private_hosts = git.example.com, *.corp.example
+
 [disabled_projects]
 # Projects in this section are ignored by the scanner
 # old-tool = /home/me/code/old-tool

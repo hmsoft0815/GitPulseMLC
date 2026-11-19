@@ -15,6 +15,7 @@ import (
 
 	"github.com/hmsoft0815/GitPulseMLC/internal/ui/render"
 	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/visibility"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
@@ -56,6 +57,8 @@ func main() {
 	htmlOutput := flag.Bool("html", false, "Output results in HTML format (suitable for email)")
 	showProgress := flag.Bool("progress", false, "Show scanning progress (TUI mode only)")
 	jobs := flag.Int("jobs", 0, "Repositories to scan in parallel (default: one per CPU)")
+	offline := flag.Bool("offline", false, "Do not check online whether remotes are public; use cached results")
+	publicOnly := flag.Bool("public", false, "Only show repositories with a publicly readable remote")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "GitPulseMLC  - Monitor the heartbeat of your local Git repositories\n\n")
@@ -105,6 +108,10 @@ func main() {
 
 	isReportMode := *jsonOutput || *htmlOutput
 	allResults := scanProjects(cfg.Projects, *jobs, *showProgress && !isReportMode)
+	checkVisibility(allResults, cfg.Settings, *offline)
+	if *publicOnly {
+		allResults = onlyPublic(allResults)
+	}
 	summary := summarize(allResults)
 
 	// 2. Output processing
@@ -159,6 +166,9 @@ func summarize(results []*gitmonitor.RepoStatus) gitmonitor.Summary {
 		}
 		if subPointers > 0 {
 			summary.SubmodulePointers++
+		}
+		if s.Visibility == visibility.Public {
+			summary.Public++
 		}
 		hasAhead, hasBehind := false, false
 		for _, b := range s.LocalBranches {

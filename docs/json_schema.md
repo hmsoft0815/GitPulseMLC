@@ -22,6 +22,7 @@ You can also find the formal JSON Schema in [schema.json](./schema.json).
 | `ahead` | int | Number of repositories with local commits not yet pushed. |
 | `behind` | int | Number of repositories with remote commits not yet pulled. |
 | `errors` | int | Number of projects that failed to scan (e.g., directory missing). |
+| `public` | int | Number of repositories with at least one publicly readable remote. |
 | `submodule_pointers` | int | Number of repositories with a submodule that moved past the commit the parent records, and nothing else to do in it. |
 
 ---
@@ -43,6 +44,9 @@ You can also find the formal JSON Schema in [schema.json](./schema.json).
 | `ahead` | int | Commits ahead of the tracking remote branch. |
 | `behind` | int | Commits behind the tracking remote branch. |
 | `has_no_remote` | boolean | `true` if the repository has no configured remotes. |
+| `remote_url` | string | Fetch URL of the first remote (`origin` if present), without credentials. |
+| `remotes` | array | List of `RemoteInfo` objects, `origin` first; omitted when there is none. |
+| `visibility` | string | Visibility of the most open remote: `public`, `unknown`, `private`, `local`, or `none` without remotes. |
 | `local_branches` | array | List of `BranchInfo` objects for all local branches. |
 | `submodules` | array | List of `SubmoduleInfo` objects; omitted when the repository has none. |
 | `error` | string | Error message if the scan failed (only present on error). |
@@ -59,6 +63,17 @@ You can also find the formal JSON Schema in [schema.json](./schema.json).
 | `behind` | int | Commits behind remote. |
 | `last_commit_at` | string | ISO 8601 timestamp of the last commit on this branch. |
 | `is_stale` | boolean | `true` if the branch is older than 30 days (excluding main/master). |
+
+---
+
+## RemoteInfo Object
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `name` | string | Remote name, e.g. `origin`. |
+| `url` | string | Fetch URL; HTTP(S) URLs lose user and token, other URLs their password. |
+| `host` | string | Real host name with SSH aliases resolved; absent for file remotes. |
+| `visibility` | string | `public` (readable without credentials), `private` (external, anonymous read refused), `local` (file path or local network, never checked online) or `unknown` (offline without cached result, or host unreachable). |
 
 ---
 
