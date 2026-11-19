@@ -2,10 +2,13 @@
 
 All notable changes to GitPulseMLC. Details and reasoning live in the project documentation.
 
-## Unreleased
+## 1.5.0 — 2026-11-19
 
 ### Added
 - The terminal table fits narrow terminals: without PATH, then two lines per repository; `--layout` and `layout =` choose one.
+
+### Changed
+- The hint after `gitpulse add` and the third-party heading wrap to fit an 80-column terminal.
 
 ### Fixed
 - `gitpulse -v` no longer draws the stash line as the last branch of the tree.
