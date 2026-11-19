@@ -2,7 +2,7 @@
 
 All notable changes to GitPulseMLC. Details and reasoning live in the project documentation.
 
-## Unreleased
+## 1.6.0 — 2026-11-19
 
 ### Added
 - `[hosts]` in the config adds other machines (servers, WSL on Windows) to the overview, each as its own block.
