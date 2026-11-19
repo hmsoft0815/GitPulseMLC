@@ -2,7 +2,7 @@
 
 All notable changes to GitPulseMLC. Details and reasoning live in the project documentation.
 
-## Unreleased
+## 1.4.0 — 2026-11-19
 
 ### Added
 - Submodules are scanned: `SUB <path>` marks one with work of its own, `--all` lists each with its pointer state.
