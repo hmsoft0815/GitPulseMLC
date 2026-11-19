@@ -298,6 +298,8 @@ task --list       # all tasks
 ```
 
 `task install PREFIX=/opt/tools` installs elsewhere; `task uninstall` removes it again and leaves your config alone.
+Tasks under `maint:` sign and upload the release downloads; they need the maintainers' signing Mac and download
+server and stop with an explanation anywhere else — use `task release:snapshot` to build every release artifact locally.
 
 > **Windows:** Defender may block the unsigned binary because it reads many files quickly.
 > Add an exclusion for `gitpulse.exe` if that happens.

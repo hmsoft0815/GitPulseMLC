@@ -15,7 +15,7 @@ builds:
     env:
       - CGO_ENABLED=0
     # No darwin: macOS binaries must be signed and notarized, which happens on
-    # a Mac (task publish:downloads) — they are published on mlcgo.eu only.
+    # a Mac (task maint:publish) — they are published on mlcgo.eu only.
     goos: [linux, windows]
     goarch: [amd64, arm64]
     flags:

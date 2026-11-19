@@ -1,0 +1,36 @@
+version: '3'
+
+# Maintainer-only tasks: they need the signing Mac and the download server
+# named in .release.env (git-ignored, see .release.env.example). They stop
+# with an explanation everywhere else. To build release artifacts yourself,
+# use `task build:cross` or `task release:snapshot`.
+
+tasks:
+  sign-macos:
+    desc: "[maintainers] Sign and notarize the macOS binaries in bin/ on the Mac from .release.env (needs MAC_KEYCHAIN_PASS)"
+    preconditions:
+      - sh: test -f .release.env
+        msg: |-
+          maintainers only — needs .release.env (signing Mac, download server; see .release.env.example).
+          To build release artifacts yourself: task build:cross or task release:snapshot
+    cmds:
+      - task: :build:cross
+      - scripts/sign-macos.sh bin/gitpulse-darwin-arm64 bin/gitpulse-darwin-amd64
+
+  publish:
+    desc: "[maintainers] Build, sign and upload all binaries with SHA256SUMS to mlcgo.eu/downloads/gitpulse/"
+    preconditions:
+      - sh: test -f .release.env
+        msg: |-
+          maintainers only — needs .release.env (signing Mac, download server; see .release.env.example).
+          To build release artifacts yourself: task build:cross or task release:snapshot
+      - sh: test -n "$DOWNLOAD_TARGET"
+        msg: "DOWNLOAD_TARGET is not set in .release.env — see .release.env.example"
+    vars:
+      FILES: gitpulse-darwin-amd64 gitpulse-darwin-arm64 gitpulse-linux-amd64 gitpulse-linux-arm64 gitpulse-windows-amd64.exe
+    cmds:
+      - task: sign-macos
+      # install.sh verifies the macOS download against this file
+      - cd bin && sha256sum {{.FILES}} > SHA256SUMS
+      - cd bin && rsync -az {{.FILES}} SHA256SUMS "$DOWNLOAD_TARGET/"
+      - curl -fsSL https://mlcgo.eu/downloads/gitpulse/SHA256SUMS | diff - bin/SHA256SUMS && echo "✓ downloads live"
