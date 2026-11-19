@@ -85,6 +85,7 @@ g clone -q "$B/whisper.git" "$C/whisper.cpp" 2>/dev/null
 for i in $(seq 1 13); do commit "$D/whisper-up" "f$i" "ggml: speed up kernel $i"; done
 commit "$D/whisper-up" vad "Add voice activity detection to the server"
 g -C "$D/whisper-up" push -q
+g -C "$C/whisper.cpp" fetch -q # as after a fetch: the 14 commits are known
 echo "// patched" >"$C/whisper.cpp/main.cpp"
 echo "// patched" >"$C/whisper.cpp/server.cpp"
 g -C "$C/whisper.cpp" remote set-url origin https://github.com/ggerganov/whisper.cpp.git
