@@ -9,8 +9,10 @@ All notable changes to GitPulseMLC. Details and reasoning live in the project do
 - A REMOTE column shows whether a repository is public, private, on the local network or has no remote.
 - `--public` lists only publicly readable repositories; `--offline` skips the online check and uses cached results.
 - `private_hosts` in the config marks Git hosts that are private although they look external.
-- `gitpulse add`, `ignore`, `watch`, `mark` and `list` manage projects without editing the config by hand.
+- `gitpulse add`, `ignore`, `watch`, `mark`, `remove` and `list` manage projects without editing the config by hand.
+- `gitpulse remove --missing` forgets every project whose folder is gone or holds no repository.
 - Projects can be marked as third party; their local work is shown as hints in a separate block.
+- `task install` builds gitpulse and installs it with its man page to `~/.local` without root; `task uninstall` removes it.
 - `own_remotes` sorts new repositories into own and third party; `gitpulse mark --auto` sorts existing ones.
 
 ### Changed

@@ -108,3 +108,38 @@ func expectErr(err error) error {
 	}
 	return nil
 }
+
+func TestRemoveMissing(t *testing.T) {
+	root := t.TempDir()
+	kept := newRepo(t, root, "kept", "")
+	emptyDir := filepath.Join(root, "empty")
+	if err := os.Mkdir(emptyDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cfgPath := filepath.Join(t.TempDir(), "repos.ini")
+	content := "[projects]\nkept = " + kept + "\ngone = " + filepath.Join(root, "gone") + "\n" +
+		"[disabled_projects]\nempty = " + emptyDir + "\n"
+	if err := os.WriteFile(cfgPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	if err := runRemove([]string{"--missing", "--dry-run"}, cfgPath, &out); err != nil {
+		t.Fatal(err)
+	}
+	if len(sectionsOf(t, cfgPath)) != 3 {
+		t.Fatalf("dry run changed the config:\n%s", out.String())
+	}
+	if err := runRemove([]string{"--missing"}, cfgPath, &out); err != nil {
+		t.Fatal(err)
+	}
+	if got := sectionsOf(t, cfgPath); len(got) != 1 || got["kept"] != config.SectionOwn {
+		t.Errorf("after remove --missing: %v\n%s", got, out.String())
+	}
+	if err := runRemove([]string{"kept"}, cfgPath, &out); err != nil {
+		t.Fatal(err)
+	}
+	if got := sectionsOf(t, cfgPath); len(got) != 0 {
+		t.Errorf("after remove kept: %v", got)
+	}
+}

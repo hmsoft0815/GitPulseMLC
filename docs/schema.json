@@ -60,6 +60,9 @@
         },
         "third_party_updates": {
           "type": "integer"
+        },
+        "missing": {
+          "type": "integer"
         }
       }
     },
@@ -184,6 +187,9 @@
           ]
         },
         "third_party": {
+          "type": "boolean"
+        },
+        "missing": {
           "type": "boolean"
         }
       }

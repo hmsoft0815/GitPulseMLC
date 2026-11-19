@@ -149,6 +149,9 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 			return ""
 		}())
 		fmt.Printf("  Errors:        [ %s ]\n", renderStat(summary.Errors, styles.Behind))
+		if summary.Missing > 0 {
+			fmt.Println(styles.Muted.Render(fmt.Sprintf("                 %d no longer exist — `gitpulse remove --missing` forgets them", summary.Missing)))
+		}
 		if summary.Public > 0 {
 			fmt.Printf("  Public:        [ %s ] %s\n", renderStat(summary.Public, styles.Public),
 				styles.Muted.Render("(readable by anyone)"))

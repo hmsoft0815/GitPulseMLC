@@ -54,6 +54,8 @@ var commands = map[string]func(args []string, globalConfig string, out io.Writer
 	"watch":  runWatch,
 	"mark":   runMark,
 	"list":   runList,
+	"remove": runRemove,
+	"rm":     runRemove,
 }
 
 func main() {
@@ -79,6 +81,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  gitpulse ignore NAME|PATH ...        stop watching, but remember\n")
 		fmt.Fprintf(os.Stderr, "  gitpulse watch NAME|PATH ...         watch an ignored project again\n")
 		fmt.Fprintf(os.Stderr, "  gitpulse mark NAME|PATH ... own|3rd  your own project or third party (--auto: by own_remotes)\n")
+		fmt.Fprintf(os.Stderr, "  gitpulse remove NAME|PATH ...        forget projects (--missing: all whose folder is gone)\n")
 		fmt.Fprintf(os.Stderr, "  gitpulse list                        all projects with kind and state\n")
 		fmt.Fprintf(os.Stderr, "  gitpulse COMMAND --help              flags of a command\n\n")
 		fmt.Fprintf(os.Stderr, "Flags:\n")
@@ -195,6 +198,9 @@ func summarize(results []*gitmonitor.RepoStatus) gitmonitor.Summary {
 	for _, s := range results {
 		if s.ErrorMsg != "" {
 			summary.Errors++
+			if s.Missing {
+				summary.Missing++
+			}
 			continue
 		}
 		if s.ThirdParty {

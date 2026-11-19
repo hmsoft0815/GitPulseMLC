@@ -4,6 +4,7 @@
 package gitmonitor
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -40,6 +41,7 @@ func (s *scanner) Scan(name, path string) (*RepoStatus, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		status.Error = fmt.Errorf("path does not exist: %s", path)
 		status.ErrorMsg = status.Error.Error()
+		status.Missing = true
 		return status, nil
 	} else if err != nil {
 		status.Error = fmt.Errorf("error accessing path: %w", err)
@@ -59,6 +61,7 @@ func (s *scanner) Scan(name, path string) (*RepoStatus, error) {
 	if err != nil {
 		status.Error = fmt.Errorf("failed to open repo: %w", err)
 		status.ErrorMsg = status.Error.Error()
+		status.Missing = errors.Is(err, git.ErrRepositoryNotExists)
 		return status, nil
 	}
 
@@ -301,4 +304,16 @@ func countWorktreeChanges(status *RepoStatus, wtStatus git.Status) {
 			status.DeletedCount++
 		}
 	}
+}
+
+// Gone explains why path no longer holds a Git repository — "path does not
+// exist" or "no Git repository" — or returns "" if it still does.
+func Gone(path string) string {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return "path does not exist"
+	}
+	if _, err := git.PlainOpen(path); errors.Is(err, git.ErrRepositoryNotExists) {
+		return "no Git repository"
+	}
+	return ""
 }

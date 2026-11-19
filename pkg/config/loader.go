@@ -152,15 +152,15 @@ func (m *Manager) AddProject(name, path string) error {
 	return cfg.SaveTo(m.Path)
 }
 
-// RemoveProject removes a project from the configuration.
+// RemoveProject removes a project from [projects].
+//
+// Deprecated: use Lookup and Remove, which know every section.
 func (m *Manager) RemoveProject(name string) error {
-	cfg, err := loadINI(m.Path)
+	e, err := m.Lookup(name)
 	if err != nil {
 		return err
 	}
-
-	cfg.Section("projects").DeleteKey(name)
-	return cfg.SaveTo(m.Path)
+	return m.Remove(e)
 }
 
 // ToggleProject moves a project between [projects] and [disabled_projects].

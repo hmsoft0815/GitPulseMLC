@@ -25,6 +25,7 @@ You can also find the formal JSON Schema in [schema.json](./schema.json).
 | `public` | int | Number of own repositories with at least one publicly readable remote. |
 | `third_party` | int | Number of third-party repositories. They are not counted in `dirty`, `ahead`, `behind`, `public` or `submodule_pointers`. |
 | `third_party_updates` | int | Number of third-party repositories behind their upstream. |
+| `missing` | int | Number of projects whose folder is gone or holds no repository any more (also counted in `errors`). |
 | `submodule_pointers` | int | Number of repositories with a submodule that moved past the commit the parent records, and nothing else to do in it. |
 
 ---
@@ -47,6 +48,7 @@ You can also find the formal JSON Schema in [schema.json](./schema.json).
 | `ahead` | int | Commits ahead of the tracking remote branch. |
 | `behind` | int | Commits behind the tracking remote branch. |
 | `has_no_remote` | boolean | `true` if the repository has no configured remotes. |
+| `missing` | boolean | `true` if the folder is gone or holds no Git repository any more; `gitpulse remove --missing` forgets such projects. |
 | `remote_url` | string | Fetch URL of the first remote (`origin` if present), without credentials. |
 | `remotes` | array | List of `RemoteInfo` objects, `origin` first; omitted when there is none. |
 | `visibility` | string | Visibility of the most open remote: `public`, `unknown`, `private`, `local`, or `none` without remotes. |

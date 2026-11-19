@@ -13,6 +13,7 @@ import (
 
 	"github.com/hmsoft0815/GitPulseMLC/pkg/config"
 	"github.com/hmsoft0815/GitPulseMLC/pkg/discover"
+	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
 	"github.com/hmsoft0815/GitPulseMLC/pkg/ownership"
 )
 
@@ -183,7 +184,7 @@ func printEntries(out io.Writer, entries []config.Entry, settings config.Setting
 	fmt.Fprintf(out, "%-*s  KIND  STATE    PATH\n", width, "NAME")
 	counts := map[string]int{}
 	remaining := map[string]int{} // occurrences of each name still to come
-	anyDup := false
+	anyDup, anyMissing := false, false
 	for _, e := range entries {
 		remaining[e.Name]++
 	}
@@ -194,6 +195,9 @@ func printEntries(out io.Writer, entries []config.Entry, settings config.Setting
 		case remaining[e.Name] > 0:
 			state = "dup" // only the last entry of a name is used
 			anyDup = true
+		case gitmonitor.Gone(e.Path) != "":
+			state = "missing"
+			anyMissing = true
 		case e.Section == config.SectionIgnored:
 			state = "ignored"
 		}
@@ -208,6 +212,9 @@ func printEntries(out io.Writer, entries []config.Entry, settings config.Setting
 	}
 	fmt.Fprintf(out, "\n%d own, %d third party, %d ignored.\n",
 		counts[config.SectionOwn], counts[config.SectionThirdParty], counts[config.SectionIgnored])
+	if anyMissing {
+		fmt.Fprintf(out, "missing = the folder is gone or holds no Git repository — `gitpulse remove --missing` forgets them.\n")
+	}
 	if anyDup {
 		fmt.Fprintf(out, "dup = the name occurs again further down; only the last entry is used — rename one.\n")
 	}

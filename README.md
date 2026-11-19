@@ -102,6 +102,8 @@ gitpulse add ~/code              # add every repository below a folder (or one: 
 gitpulse ignore old-tool         # stop watching — by name or path, e.g. `gitpulse ignore .`
 gitpulse watch old-tool          # watch it again
 gitpulse mark whisper.cpp 3rd    # someone else's repository (`own` makes it yours again)
+gitpulse remove old-tool         # forget it completely (nothing on disk is touched)
+gitpulse remove --missing        # forget every project whose folder is gone
 gitpulse list                    # every project with kind and state
 ```
 
@@ -127,6 +129,9 @@ Until `own_remotes` is set everything counts as yours, and `gitpulse add` lists 
 
 **Ignored** projects are remembered, so `gitpulse add` never brings them back.
 `gitpulse ignore PATH` also works for a repository that is not in the config yet.
+**Removed** projects leave the config completely; a later `gitpulse add` of a parent folder would find them again.
+Use `remove` for repositories that no longer exist — `gitpulse remove --missing` (try `--dry-run` first) forgets every
+project whose folder is gone or holds no Git repository; `gitpulse list` shows them as `missing`.
 
 The config has one section per state — plain ini, fine to edit by hand:
 
@@ -172,6 +177,8 @@ gitpulse ignore NAME|PATH ...          stop watching, but remember
 gitpulse watch NAME|PATH ...           watch an ignored project again
 gitpulse mark NAME|PATH ... own|3rd    your own project or third party
 gitpulse mark --auto [--dry-run]       sort own projects by own_remotes
+gitpulse remove NAME|PATH ...          forget projects (alias: rm)
+gitpulse remove --missing [--dry-run]  forget every project whose folder is gone
 gitpulse list                          every project with kind and state
 gitpulse COMMAND --help                flags of a command
 
@@ -258,9 +265,12 @@ Requires Go 1.27.2+ and [Task](https://taskfile.dev).
 
 ```bash
 task build        # bin/gitpulse
+task install      # build and install for your user: ~/.local/bin/gitpulse + man page (Linux, macOS)
 task test
 task --list       # all tasks
 ```
+
+`task install PREFIX=/opt/tools` installs elsewhere; `task uninstall` removes it again and leaves your config alone.
 
 > **Windows:** Defender may block the unsigned binary because it reads many files quickly.
 > Add an exclusion for `gitpulse.exe` if that happens.

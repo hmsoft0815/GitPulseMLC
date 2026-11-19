@@ -19,6 +19,12 @@ gitpulse \- Monitor the heartbeat of local Git repositories
 .B gitpulse mark \-\-auto
 [\fB\-\-dry\-run\fR]
 .br
+.B gitpulse remove
+\fINAME\fR|\fIPATH\fR ...
+.br
+.B gitpulse remove \-\-missing
+[\fB\-\-dry\-run\fR]
+.br
 .B gitpulse list
 .SH DESCRIPTION
 .B gitpulse
@@ -78,8 +84,15 @@ watches ignored projects again.
 .B gitpulse mark \-\-auto
 moves own projects whose remotes are not in own_remotes to third party (\fB\-\-dry\-run\fR only lists them).
 .PP
+.B gitpulse remove
+(alias
+.BR rm )
+forgets projects; nothing on disk is touched. Unlike ignore, a later add of a parent folder finds them again.
+.B \-\-missing
+forgets every project whose folder is gone or holds no Git repository (\fB\-\-dry\-run\fR only lists them).
+.PP
 .B gitpulse list
-prints every project with kind (own, 3rd) and state (watched, ignored, dup).
+prints every project with kind (own, 3rd) and state (watched, ignored, missing, dup).
 .PP
 Options of add:
 .TP

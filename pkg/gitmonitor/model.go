@@ -26,6 +26,9 @@ type Summary struct {
 	ThirdParty int `json:"third_party"`
 	// ThirdPartyUpdates counts third-party repositories behind their upstream.
 	ThirdPartyUpdates int `json:"third_party_updates"`
+	// Missing counts projects whose path is gone or holds no repository
+	// any more; they are also counted in Errors.
+	Missing int `json:"missing"`
 }
 
 // RemoteInfo describes one configured remote. Host and Visibility are empty
@@ -89,6 +92,7 @@ type RepoStatus struct {
 	// --- Kritische Zustände ---
 	InMergeConflict bool `json:"in_merge_conflict"` // True if a merge conflict is active.
 	HasNoRemote     bool `json:"has_no_remote"`     // True if the repository exists only locally.
+	Missing         bool `json:"missing"`           // True if the path is gone or holds no repository any more.
 
 	// --- Metadaten für UI ---
 	MainLanguage string `json:"main_language"`   // Primary programming language (optional).

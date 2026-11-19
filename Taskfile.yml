@@ -21,6 +21,35 @@ tasks:
       - go build -ldflags="{{.LDFLAGS}}" -trimpath -o bin/gitpulse{{exeExt}} ./cmd/gitpulse
       - ./bin/gitpulse{{exeExt}} --version
 
+  install:
+    desc: Build and install gitpulse and its manpage for the current user (PREFIX=~/.local; Linux, macOS)
+    platforms: [linux, darwin]
+    deps: [build]
+    silent: true
+    vars:
+      PREFIX: '{{.PREFIX | default (printf "%s/.local" .HOME)}}'
+    cmds:
+      - install -d "{{.PREFIX}}/bin" "{{.PREFIX}}/share/man/man1"
+      - install -m 0755 bin/gitpulse "{{.PREFIX}}/bin/gitpulse"
+      - install -m 0644 docs/gitpulse.1 "{{.PREFIX}}/share/man/man1/gitpulse.1"
+      - echo "Installed {{.PREFIX}}/bin/gitpulse and man page gitpulse(1)"
+      - |
+        case ":$PATH:" in
+          *":{{.PREFIX}}/bin:"*) "{{.PREFIX}}/bin/gitpulse" --version ;;
+          *) echo "Note: {{.PREFIX}}/bin is not in PATH — add to your shell profile:"
+             echo "  export PATH=\"{{.PREFIX}}/bin:\$PATH\"" ;;
+        esac
+
+  uninstall:
+    desc: Remove gitpulse and its manpage installed by `task install` (config in ~/.gitpulsemlc stays)
+    platforms: [linux, darwin]
+    silent: true
+    vars:
+      PREFIX: '{{.PREFIX | default (printf "%s/.local" .HOME)}}'
+    cmds:
+      - rm -f "{{.PREFIX}}/bin/gitpulse" "{{.PREFIX}}/share/man/man1/gitpulse.1"
+      - echo "Removed gitpulse from {{.PREFIX}}; your config ~/.gitpulsemlc/ is untouched"
+
   build:remote:
     desc: Build the remote execution utility (bin/remote_gitpulse)
     cmds:

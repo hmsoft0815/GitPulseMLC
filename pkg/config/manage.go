@@ -139,3 +139,45 @@ func (m *Manager) Move(name, section string) error {
 	}
 	return fmt.Errorf("%q: %w in %s", name, ErrNotFound, m.Path)
 }
+
+// Remove deletes one entry — name, path and section as returned by Entries
+// or Lookup. Of a name that occurs twice only the entry with that path goes.
+func (m *Manager) Remove(e Entry) error {
+	cfg, err := loadINI(m.Path)
+	if err != nil {
+		return fmt.Errorf("load %s: %w", m.Path, err)
+	}
+	section := cfg.Section(e.Section)
+	key, err := section.GetKey(e.Name)
+	if err != nil {
+		return fmt.Errorf("%q: %w in [%s] of %s", e.Name, ErrNotFound, e.Section, m.Path)
+	}
+	var remaining []string
+	for _, v := range key.ValueWithShadows() {
+		if filepath.Clean(v) != filepath.Clean(e.Path) {
+			remaining = append(remaining, v)
+		}
+	}
+	if len(remaining) == len(key.ValueWithShadows()) {
+		return fmt.Errorf("%q with path %s: %w in %s", e.Name, e.Path, ErrNotFound, m.Path)
+	}
+	comment := key.Comment
+	if len(remaining) == 0 {
+		keepComment(section, key, key)
+	}
+	section.DeleteKey(e.Name)
+	if len(remaining) > 0 {
+		kept := section.Key(e.Name)
+		kept.SetValue(remaining[0])
+		kept.Comment = comment
+		for _, v := range remaining[1:] {
+			if err := kept.AddShadow(v); err != nil {
+				return fmt.Errorf("keep %q: %w", e.Name, err)
+			}
+		}
+	}
+	if err := cfg.SaveTo(m.Path); err != nil {
+		return fmt.Errorf("save %s: %w", m.Path, err)
+	}
+	return nil
+}

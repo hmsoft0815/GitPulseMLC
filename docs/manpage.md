@@ -12,6 +12,8 @@ gitpulse - Monitor the heartbeat of local Git repositories
 
 **gitpulse mark** *NAME*|*PATH* ... **own**|**3rd** · **gitpulse mark --auto** [**--dry-run**]
 
+**gitpulse remove** *NAME*|*PATH* ... · **gitpulse remove --missing** [**--dry-run**]
+
 **gitpulse list**
 
 ## DESCRIPTION
@@ -47,7 +49,9 @@ Windows Defender or other antivirus tools might flag the generated binary as sus
 
 **gitpulse mark** *NAME* ... **own**|**3rd** moves projects between `[projects]` and `[third_party]`. Third-party projects are listed in their own block; local changes, commits, stashes and stale branches there are hints, they are not counted as Dirty, Ahead, Behind or Public, and only new upstream commits make them need action. **gitpulse mark --auto** moves own projects whose remotes are not in `own_remotes` to third party; **--dry-run** only lists them.
 
-**gitpulse list** prints every project with its kind (own, 3rd) and state (watched, ignored, dup). A name that occurs twice is watched only with its last entry; the others are listed as dup.
+**gitpulse remove** (alias **rm**) forgets projects: they leave the configuration completely, and nothing on disk is touched. Unlike **ignore**, a later **add** of a parent folder finds them again. **--missing** forgets every project whose folder is gone or holds no Git repository; **--dry-run** only lists them.
+
+**gitpulse list** prints every project with its kind (own, 3rd) and state (watched, ignored, missing, dup). A name that occurs twice is watched only with its last entry; the others are listed as dup.
 
 Flags of these commands may also follow the names and paths. Each accepts **--config PATH**.
 *   **--config PATH**: Configuration file to create or extend.

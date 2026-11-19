@@ -102,6 +102,8 @@ gitpulse add ~/code              # alle Repositories unter einem Ordner (oder ei
 gitpulse ignore altes-tool       # nicht mehr beobachten — per Name oder Pfad, z. B. `gitpulse ignore .`
 gitpulse watch altes-tool        # wieder beobachten
 gitpulse mark whisper.cpp 3rd    # Repository von jemand anderem (`own` macht es wieder zu deinem)
+gitpulse remove altes-tool       # ganz vergessen (auf der Platte wird nichts angefasst)
+gitpulse remove --missing        # alle Projekte vergessen, deren Ordner weg ist
 gitpulse list                    # alle Projekte mit Art und Zustand
 ```
 
@@ -127,6 +129,9 @@ Solange `own_remotes` fehlt, gilt alles als deins, und `gitpulse add` schlägt d
 
 **Ignorierte** Projekte bleiben gemerkt, `gitpulse add` holt sie also nie zurück.
 `gitpulse ignore PFAD` geht auch für ein Repository, das noch nicht in der Config steht.
+**Entfernte** Projekte verschwinden ganz aus der Config; ein späteres `gitpulse add` des Elternordners fände sie wieder.
+`remove` ist für Repositories, die es nicht mehr gibt — `gitpulse remove --missing` (vorher mit `--dry-run` ansehen) vergisst
+alle Projekte, deren Ordner weg ist oder kein Git-Repository mehr enthält; `gitpulse list` zeigt sie als `missing`.
 
 Die Config hat je Zustand eine Section — reines ini, auch von Hand bearbeitbar:
 
@@ -172,6 +177,8 @@ gitpulse ignore NAME|PFAD ...          nicht mehr beobachten, aber merken
 gitpulse watch NAME|PFAD ...           ignoriertes Projekt wieder beobachten
 gitpulse mark NAME|PFAD ... own|3rd    eigenes Projekt oder 3rd party
 gitpulse mark --auto [--dry-run]       eigene Projekte nach own_remotes sortieren
+gitpulse remove NAME|PFAD ...          Projekte vergessen (Alias: rm)
+gitpulse remove --missing [--dry-run]  alle Projekte vergessen, deren Ordner weg ist
 gitpulse list                          alle Projekte mit Art und Zustand
 gitpulse BEFEHL --help                 Flags eines Befehls
 
@@ -258,9 +265,12 @@ Benötigt Go 1.27.2+ und [Task](https://taskfile.dev).
 
 ```bash
 task build        # bin/gitpulse
+task install      # bauen und für deinen Benutzer installieren: ~/.local/bin/gitpulse + Manpage (Linux, macOS)
 task test
 task --list       # alle Tasks
 ```
+
+`task install PREFIX=/opt/tools` installiert woanders hin; `task uninstall` entfernt es wieder und lässt deine Config in Ruhe.
 
 > **Windows:** Der Defender kann das unsignierte Binary blockieren, weil es schnell viele Dateien liest.
 > In dem Fall eine Ausnahme für `gitpulse.exe` anlegen.

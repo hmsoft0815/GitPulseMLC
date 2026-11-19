@@ -85,3 +85,41 @@ func TestLookupByNameAndPath(t *testing.T) {
 		t.Errorf("Lookup(missing) = %v, want ErrNotFound", err)
 	}
 }
+
+func TestRemove(t *testing.T) {
+	m := writeConfig(t, `[projects]
+app = /code/app
+# keep me
+gone = /code/gone
+rag = /code/rag
+rag = /code/other/rag
+web = /code/web
+`)
+	for _, e := range []Entry{
+		{Name: "gone", Path: "/code/gone", Section: SectionOwn},
+		{Name: "rag", Path: "/code/rag", Section: SectionOwn},
+	} {
+		if err := m.Remove(e); err != nil {
+			t.Fatalf("Remove(%s): %v", e.Name, err)
+		}
+	}
+	entries, err := m.Entries()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, e := range entries {
+		got = append(got, e.Name+"="+filepath.ToSlash(e.Path))
+	}
+	if strings.Join(got, " ") != "app=/code/app web=/code/web rag=/code/other/rag" &&
+		strings.Join(got, " ") != "app=/code/app rag=/code/other/rag web=/code/web" {
+		t.Errorf("after Remove: %v", got)
+	}
+	data, _ := os.ReadFile(m.Path)
+	if !strings.Contains(string(data), "# keep me") {
+		t.Errorf("comment above removed key lost:\n%s", data)
+	}
+	if err := m.Remove(Entry{Name: "app", Path: "/elsewhere", Section: SectionOwn}); !errors.Is(err, ErrNotFound) {
+		t.Errorf("Remove with wrong path = %v, want ErrNotFound", err)
+	}
+}
