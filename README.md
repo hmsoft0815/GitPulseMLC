@@ -119,6 +119,20 @@ and leave local changes there that will never go upstream. Mark them as third pa
 - they do not count as Dirty, Ahead, Behind or Public, and `--compact` hides them;
 - new upstream commits (`↓3`) still show — that is the one thing worth knowing about them.
 
+**Has upstream moved on?** That is the question for a repository you only cloned to test. gitpulse never fetches,
+so `↓3` reflects your last `git fetch`. Fetch the third-party checkouts, then look:
+
+```bash
+gitpulse --json | jq -r '.results[] | select(.third_party) | .path' |
+  while read -r dir; do git -C "$dir" fetch --quiet; done
+gitpulse --compact     # a third-party repository now shows up only if upstream has new commits
+
+# which ones, and what is new
+gitpulse --json | jq -r '.results[] | select(.third_party and .behind > 0) | "\(.name): \(.behind) new — \(.incoming_commits[0])"'
+```
+
+Put the first two lines in a weekly cron job and you notice new releases of the tools you are evaluating.
+
 gitpulse sorts new repositories by itself once it knows which remotes are yours:
 
 ```ini
@@ -163,6 +177,9 @@ gitpulse --compact
 
 # Is anything public that should not be?
 gitpulse --public
+
+# Tools you cloned to try: has upstream moved on? (see Managing projects)
+gitpulse --json | jq -r '.results[] | select(.third_party) | .path' | while read -r d; do git -C "$d" fetch -q; done; gitpulse --compact
 
 # Feed your own monitoring or scripts (own projects with uncommitted changes)
 gitpulse --json | jq -r '.results[] | select(.third_party | not) | select(.is_clean == false) | .name'

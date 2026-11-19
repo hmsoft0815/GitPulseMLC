@@ -119,6 +119,20 @@ und hast dort lokale Änderungen, die nie upstream gehen sollen. Markiere sie al
 - sie zählen nicht bei Dirty, Ahead, Behind oder Public, und `--compact` blendet sie aus;
 - neue Commits upstream (`↓3`) bleiben sichtbar — das ist bei ihnen das Einzige, was zählt.
 
+**Hat sich upstream etwas getan?** Das ist die Frage bei einem Repository, das du nur zum Testen geklont hast. gitpulse
+fetcht nie, `↓3` zeigt also den Stand deines letzten `git fetch`. Fetche die 3rd-party-Checkouts, dann schau hin:
+
+```bash
+gitpulse --json | jq -r '.results[] | select(.third_party) | .path' |
+  while read -r dir; do git -C "$dir" fetch --quiet; done
+gitpulse --compact     # ein 3rd-party-Repository erscheint jetzt nur, wenn es upstream neue Commits gibt
+
+# welche, und was ist neu
+gitpulse --json | jq -r '.results[] | select(.third_party and .behind > 0) | "\(.name): \(.behind) neu — \(.incoming_commits[0])"'
+```
+
+Die ersten beiden Zeilen als wöchentlicher Cron-Job, und du merkst neue Versionen der Tools, die du gerade ausprobierst.
+
 gitpulse sortiert neue Repositories selbst ein, sobald es weiß, welche Remotes deine sind:
 
 ```ini
@@ -163,6 +177,9 @@ gitpulse --compact
 
 # Ist etwas öffentlich, das es nicht sein sollte?
 gitpulse --public
+
+# Geklonte Tools zum Ausprobieren: Hat sich upstream etwas getan? (siehe Projekte verwalten)
+gitpulse --json | jq -r '.results[] | select(.third_party) | .path' | while read -r d; do git -C "$d" fetch -q; done; gitpulse --compact
 
 # Eigenes Monitoring oder Skripte füttern (eigene Projekte mit offenen Änderungen)
 gitpulse --json | jq -r '.results[] | select(.third_party | not) | select(.is_clean == false) | .name'
