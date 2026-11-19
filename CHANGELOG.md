@@ -2,6 +2,15 @@
 
 All notable changes to GitPulseMLC. Details and reasoning live in the project documentation.
 
+## Unreleased
+
+### Added
+- The terminal table fits narrow terminals: without PATH, then two lines per repository; `--layout` and `layout =` choose one.
+
+### Fixed
+- `gitpulse -v` no longer draws the stash line as the last branch of the tree.
+- Commits younger than an hour show `12m ago` or `just now` instead of `0h ago`.
+
 ## 1.4.0 — 2026-11-19
 
 ### Added

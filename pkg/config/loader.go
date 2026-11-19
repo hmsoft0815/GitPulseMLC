@@ -26,6 +26,8 @@ type Settings struct {
 	// patterns (e.g. "github.com/me", "git.example.com"). New repositories
 	// with a remote elsewhere are added as third party.
 	OwnRemotes []string
+	// Layout of the terminal table: auto (default), wide, narrow or stacked.
+	Layout string
 }
 
 // Sections of the config file that list projects.
@@ -97,6 +99,7 @@ func (m *Manager) Load() (*Config, error) {
 		}
 		settings.PrivateHosts = splitList(setSection.Key("private_hosts").String())
 		settings.OwnRemotes = splitList(setSection.Key("own_remotes").String())
+		settings.Layout = setSection.Key("layout").String()
 	}
 
 	// 3. Parse General Settings

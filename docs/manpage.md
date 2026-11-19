@@ -29,6 +29,7 @@ Windows Defender or other antivirus tools might flag the generated binary as sus
 *   **--compact**: Enable compact mode. Only repositories that require action are displayed.
 *   **--jobs N**: Scan up to N repositories in parallel (default: one per CPU). Lower it on slow disks.
 *   **--public**: Only show repositories with a publicly readable remote.
+*   **--layout auto|wide|narrow|stacked**: Table layout. **auto** (default) fits the terminal: **wide** shows every column, **narrow** drops PATH and shortens long branch names, **stacked** shows two lines per repository (name and status; branch, remote and path). A long status wraps within its column. When the output is not a terminal it is always wide and never cut. **$COLUMNS** overrides the detected terminal width.
 *   **--offline**: Do not check online whether remotes are public; use cached results only.
 *   **--progress**: Show a real-time scanning progress indicator on stderr.
 *   **--html**: Output results as a standalone, high-contrast HTML report.
@@ -79,6 +80,7 @@ Each project name must be unique across all sections; of a name that occurs twic
 *   **column_name_width**: Minimum width for the project name column (default: 25).
 *   **show_summary**: Toggle the final summary block (default: true).
 *   **compact_mode**: Enable compact mode by default (default: false).
+*   **layout**: Default for **--layout** (default: auto).
 *   **own_remotes**: Comma-separated remotes that are yours, as host (`git.example.com`) or host and owner (`github.com/me`); `*` matches within a segment. Repositories elsewhere are added as third party.
 *   **private_hosts**: Comma-separated glob patterns of Git hosts that count as local network and are never checked online.
 

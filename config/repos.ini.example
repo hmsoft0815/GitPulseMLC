@@ -35,6 +35,10 @@ compact_mode = false
 # A repository with no remote or a local-network remote is always yours.
 # own_remotes = github.com/me, gitlab.com/my-group, git.example.com
 
+# Terminal table (default: auto). auto fits the terminal: wide → narrow (no PATH,
+# short branch names) → stacked (two lines per repository). Pipes stay wide.
+# layout = auto
+
 [third_party]
 # Other people's repositories, checked out to look at or test.
 # Local changes here are hints, not action items; `gitpulse mark NAME 3rd|own` moves them.

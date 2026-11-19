@@ -16,6 +16,12 @@ func RelativeTime(t time.Time) string {
 		return "unknown"
 	}
 	d := time.Since(t)
+	if d < time.Minute {
+		return "just now"
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm ago", int(d.Minutes()))
+	}
 	if d.Hours() < 24 {
 		return fmt.Sprintf("%dh ago", int(d.Hours()))
 	}

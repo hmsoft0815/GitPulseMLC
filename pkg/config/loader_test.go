@@ -29,6 +29,7 @@ column_name_width = 30
 show_summary = false
 show_icons = false
 private_hosts = git.example.com, , *.corp.example
+layout = stacked
 `
 	if _, err := tmpFile.WriteString(content); err != nil {
 		t.Fatalf("failed to write to temp file: %v", err)
@@ -41,6 +42,9 @@ private_hosts = git.example.com, , *.corp.example
 		t.Fatalf("LoadConfig failed: %v", err)
 	}
 
+	if cfg.Settings.Layout != "stacked" {
+		t.Errorf("Layout = %q, want stacked", cfg.Settings.Layout)
+	}
 	if got := strings.Join(cfg.Settings.PrivateHosts, "|"); got != "git.example.com|*.corp.example" {
 		t.Errorf("PrivateHosts = %q, want git.example.com|*.corp.example", got)
 	}

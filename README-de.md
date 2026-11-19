@@ -215,6 +215,7 @@ Flags:
   --jobs N       so viele Repositories parallel scannen (Standard: eins pro CPU)
   --public       nur Repositories mit öffentlich lesbarem Remote
   --offline      nicht online prüfen, ob Remotes öffentlich sind; Ergebnisse aus dem Cache nehmen
+  --layout L     Tabellen-Layout: auto (passt sich dem Terminal an, Standard), wide, narrow, stacked
   --progress     Scan-Fortschritt anzeigen (nur Terminal-Ausgabe)
   --json         JSON-Ausgabe (Schema: docs/json_schema.md)
   --html         kontrastreicher HTML-Bericht, z. B. für E-Mails
@@ -228,6 +229,11 @@ add-Flags:
   --own, --3rd   als eigenes / 3rd party eintragen, egal welches Remote
   --config PATH  Config-Datei, die angelegt oder erweitert wird
 ```
+
+Ist das Terminal schmaler als die Tabelle, lässt `auto` zuerst die Spalte PATH weg und kürzt lange Branch-Namen
+(`narrow`), danach zeigt es zwei Zeilen je Repository — Name und Status, darunter Branch · Remote · Pfad (`stacked`).
+Ein langer Status bricht in seiner Spalte um, statt abgeschnitten zu werden. In eine Pipe oder Datei bleibt die
+Ausgabe immer eine breite Zeile je Repository, Skripte sehen also unabhängig von der Fenstergröße dasselbe Format.
 
 `add` überspringt versteckte Ordner, `node_modules` und `vendor` und schaut nicht in ein bereits gefundenes Repository hinein.
 Projekte, die schon in der Config stehen — beobachtet oder ignoriert —, werden nie doppelt eingetragen. Flags dürfen auch hinter den Pfaden stehen.
@@ -255,6 +261,8 @@ compact_mode = false
 private_hosts = git.example.com, *.corp.example
 # deine Remotes; Repositories anderswo werden als 3rd party eingetragen
 own_remotes = github.com/ich, git.example.com
+# Tabelle im Terminal: auto (Standard), wide, narrow oder stacked
+layout = auto
 
 [third_party]
 whisper.cpp = /home/ich/src/whisper.cpp

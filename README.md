@@ -215,6 +215,7 @@ Flags:
   --jobs N       repositories scanned in parallel (default: one per CPU)
   --public       only repositories with a publicly readable remote
   --offline      do not check online whether remotes are public; use cached results
+  --layout L     table layout: auto (fit the terminal, default), wide, narrow, stacked
   --progress     show scanning progress (terminal output only)
   --json         JSON output (schema: docs/json_schema.md)
   --html         high-contrast HTML report, e.g. for e-mail
@@ -228,6 +229,11 @@ add flags:
   --own, --3rd   add as own / third party, whatever the remote
   --config PATH  config file to create or extend
 ```
+
+In a terminal narrower than the table, `auto` first drops the PATH column and shortens long branch names
+(`narrow`), then shows two lines per repository — name and status, below them branch · remote · path (`stacked`).
+A long status wraps within its column instead of being cut. Piped or redirected output always stays one wide
+line per repository, so scripts see the same format whatever the window size.
 
 `add` skips hidden folders, `node_modules` and `vendor`, and does not look inside a repository it has found.
 Projects already in the config — watched or ignored — are never added twice. Flags may follow the paths.
@@ -255,6 +261,8 @@ compact_mode = false
 private_hosts = git.example.com, *.corp.example
 # your remotes; repositories elsewhere are added as third party
 own_remotes = github.com/me, git.example.com
+# terminal table: auto (default), wide, narrow or stacked
+layout = auto
 
 [third_party]
 whisper.cpp = /home/me/src/whisper.cpp

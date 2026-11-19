@@ -50,6 +50,9 @@ Scan up to N repositories in parallel (default: one per CPU). Lower it on slow d
 .B \-\-public
 Only show repositories with a publicly readable remote.
 .TP
+.BI \-\-layout " auto|wide|narrow|stacked"
+Table layout. auto (default) fits the terminal: wide shows every column, narrow drops PATH and shortens long branch names, stacked shows two lines per repository. A long status wraps within its column. Output that is not a terminal is always wide and never cut; $COLUMNS overrides the detected width.
+.TP
 .B \-\-offline
 Do not check online whether remotes are public; use cached results only.
 .TP
@@ -145,6 +148,8 @@ Each project name must be unique across all sections; of a name that occurs twic
 \fBshow_summary\fR: Boolean to toggle the final summary block (default: true).
 .br
 \fBcompact_mode\fR: Boolean to enable compact mode by default (default: false).
+.br
+\fBlayout\fR: Default for \-\-layout (default: auto).
 .br
 \fBown_remotes\fR: Comma-separated remotes that are yours, as host or host/owner (e.g. github.com/me); repositories elsewhere are added as third party.
 .br

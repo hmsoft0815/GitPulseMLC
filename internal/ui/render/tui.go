@@ -5,165 +5,93 @@ package render
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/hmsoft0815/GitPulseMLC/internal/ui/styles"
-	"github.com/hmsoft0815/GitPulseMLC/internal/util"
 	"github.com/hmsoft0815/GitPulseMLC/pkg/config"
 	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
-type rowInfo struct {
-	status      *gitmonitor.RepoStatus
-	statusStr   string // already styled
-	needsAction bool
+// TUIOptions control the terminal output.
+type TUIOptions struct {
+	Details bool   // -v: remotes, submodules, branches and stashes per repository
+	Layout  Layout // how the table uses the width; "" means auto
+	Width   int    // terminal width in columns; 0 when the output is not a terminal
 }
 
-func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *config.Config, details bool) {
-	maxNameLen := len("NAME")
-	maxBranchLen := len("BRANCH") + 1
-	maxRemoteLen := len("REMOTE")
-	maxStatusLen := len("STATUS")
-
-	var toDisplay []rowInfo
-
-	for _, status := range allResults {
-		info := rowInfo{status: status}
-
-		info.statusStr, info.needsAction = statusCell(status)
-
-		if !cfg.Settings.CompactMode || info.needsAction {
-			toDisplay = append(toDisplay, info)
-			if len(status.Name) > maxNameLen {
-				maxNameLen = len(status.Name)
-			}
-			if status.ErrorMsg == "" && len(status.CurrentBranch) > maxBranchLen {
-				maxBranchLen = len(status.CurrentBranch)
-			}
-			maxRemoteLen = max(maxRemoteLen, lipgloss.Width(remoteText(status)))
-			sLen := lipgloss.Width(info.statusStr)
-			if sLen > maxStatusLen {
-				maxStatusLen = sLen
-			}
-		}
+// TUI writes the status table and the summary for a terminal.
+func TUI(w io.Writer, results []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *config.Config, opts TUIOptions) {
+	rows, cols := buildRows(results, cfg.Settings)
+	layout := opts.Layout
+	if layout == "" {
+		layout = LayoutAuto
 	}
+	layout = layout.resolve(cols, opts.Width)
 
-	styles.ColName = styles.ColName.Width(maxNameLen + 2)
-	styles.ColBranch = styles.ColBranch.Width(maxBranchLen + 2)
-	styles.ColRemote = styles.ColRemote.Width(maxRemoteLen + 2)
-	styles.ColStatus = styles.ColStatus.Width(maxStatusLen + 2)
-
-	fmt.Printf("%s%s%s%s%s\n",
-		styles.ColName.Render(styles.Header.Render("NAME")),
-		styles.ColBranch.Render(styles.Header.Render("BRANCH")),
-		styles.ColRemote.Render(styles.Header.Render("REMOTE")),
-		styles.ColStatus.Render(styles.Header.Render("STATUS")),
-		styles.Header.Render("PATH"))
-	fmt.Println(styles.Muted.Render(strings.Repeat("─", maxNameLen+maxBranchLen+maxRemoteLen+maxStatusLen+60)))
-
+	writeHeader(w, layout, cols, opts.Width)
 	thirdPartyShown := false
-	for _, info := range toDisplay {
-		s := info.status
-		if s.ThirdParty && !thirdPartyShown {
+	for _, r := range rows {
+		if r.status.ThirdParty && !thirdPartyShown {
 			thirdPartyShown = true
-			fmt.Printf("\n%s %s\n", styles.Header.Render("THIRD PARTY"),
-				styles.Muted.Render("— checked out to look at or test; local changes are only hints"))
+			fmt.Fprintln(w)
+			fmt.Fprintln(w, fit(styles.Header.Render("THIRD PARTY")+" "+
+				styles.Muted.Render("— checked out to look at or test; local changes are only hints"), opts.Width))
 		}
-		branch := "???"
-		if s.ErrorMsg == "" {
-			branch = s.CurrentBranch
-		}
-
-		displayPath := ShortenPath(s.Path, cfg.Settings.ReplacePathPrefix, cfg.Settings.ReplaceWith)
-
-		fmt.Printf("%s%s%s%s%s\n",
-			styles.ColName.Render(styles.Header.Render(s.Name)),
-			styles.ColBranch.Render(styles.Branch.Render(branch)),
-			styles.ColRemote.Render(remoteStyle(s.Visibility).Render(remoteText(s))),
-			styles.ColStatus.Render(info.statusStr),
-			styles.Path.Render(displayPath))
-
-		if details && s.ErrorMsg == "" {
-			if s.StashCount > 0 {
-				fmt.Printf("  └─ %s: %d\n", styles.Dirty.Render("Stashes"), s.StashCount)
-			}
-			printRemoteDetails(s.Remotes)
-			printSubmoduleDetails(s.Submodules)
-			for _, b := range s.LocalBranches {
-				prefix := "  ├─"
-				if b.IsHead {
-					prefix = styles.Clean.Render("  *─")
-				}
-				sync := ""
-				if b.Ahead > 0 {
-					sync += styles.Ahead.Render(fmt.Sprintf(" ↑%d", b.Ahead))
-				}
-				if b.Behind > 0 {
-					sync += styles.Behind.Render(fmt.Sprintf(" ↓%d", b.Behind))
-				}
-				ageStyle := styles.Muted
-				stale := ""
-				if b.IsStale {
-					ageStyle = styles.Behind
-					stale = " [STALE]"
-				}
-				fmt.Printf("%s Branch: %-25s%s%s\n", prefix, styles.Branch.Render(b.Name), sync,
-					ageStyle.Render(fmt.Sprintf(" (%s)%s", util.RelativeTime(b.LastCommitAt), stale)))
-			}
-			fmt.Println(styles.Muted.Render(strings.Repeat("─", 80)))
+		writeRow(w, layout, r, cols, opts.Width)
+		if opts.Details && r.status.ErrorMsg == "" {
+			writeDetails(w, r.status, opts.Width)
 		}
 	}
 
 	if cfg.Settings.ShowSummary {
-		fmt.Println()
-		fmt.Println(styles.Muted.Render(strings.Repeat("─", 40)))
-		fmt.Println(styles.Header.Render("SUMMARY:"))
-		fmt.Printf("  Total Projects: %d\n", summary.Total)
-		if cfg.Settings.CompactMode {
-			fmt.Println(styles.Muted.Render(fmt.Sprintf("  (Compact Mode: showing %d repos needing action)", len(toDisplay))))
-		}
-		renderStat := func(count int, active lipgloss.Style) string {
-			if count == 0 {
-				return styles.Muted.Render("0")
-			}
-			return active.Render(fmt.Sprintf("%d", count))
-		}
-		fmt.Printf("  Dirty:         [ %s ] %s\n", renderStat(summary.Dirty, styles.Dirty), func() string {
-			if summary.Dirty > 0 {
-				return styles.Dirty.Render("(Action required!)")
-			}
-			return ""
-		}())
-		fmt.Printf("  Ahead:         [ %s ] %s\n", renderStat(summary.Ahead, styles.Ahead), func() string {
-			if summary.Ahead > 0 {
-				return styles.Ahead.Render("(Need to push)")
-			}
-			return ""
-		}())
-		fmt.Printf("  Behind:        [ %s ] %s\n", renderStat(summary.Behind, styles.Behind), func() string {
-			if summary.Behind > 0 {
-				return styles.Behind.Render("(Need to pull)")
-			}
-			return ""
-		}())
-		fmt.Printf("  Errors:        [ %s ]\n", renderStat(summary.Errors, styles.Behind))
-		if summary.Missing > 0 {
-			fmt.Println(styles.Muted.Render(fmt.Sprintf("                 %d no longer exist — `gitpulse remove --missing` forgets them", summary.Missing)))
-		}
-		if summary.Public > 0 {
-			fmt.Printf("  Public:        [ %s ] %s\n", renderStat(summary.Public, styles.Public),
-				styles.Muted.Render("(readable by anyone)"))
-		}
-		if summary.ThirdParty > 0 {
-			fmt.Printf("  Third party:   [ %s ] %s\n", renderStat(summary.ThirdParty, styles.Muted),
-				styles.Muted.Render(fmt.Sprintf("(%d with upstream updates)", summary.ThirdPartyUpdates)))
-		}
-		if summary.SubmodulePointers > 0 {
-			fmt.Printf("  Sub-Pointers:  [ %s ] %s\n", renderStat(summary.SubmodulePointers, styles.Muted),
-				styles.Muted.Render("(submodule moved on; commit the pointer in the parent when convenient)"))
-		}
-		fmt.Println(styles.Muted.Render(strings.Repeat("─", 40)))
+		writeSummary(w, summary, len(rows), cfg.Settings.CompactMode, opts.Width)
 	}
+}
+
+// writeSummary prints the counts below the table.
+func writeSummary(w io.Writer, summary gitmonitor.Summary, shown int, compact bool, width int) {
+	rule := styles.Muted.Render(strings.Repeat("─", 40))
+	line := func(format string, args ...any) { fmt.Fprintln(w, fit(fmt.Sprintf(format, args...), width)) }
+	stat := func(count int, active lipgloss.Style) string {
+		if count == 0 {
+			return styles.Muted.Render("0")
+		}
+		return active.Render(fmt.Sprintf("%d", count))
+	}
+	note := func(count int, style lipgloss.Style, text string) string {
+		if count == 0 {
+			return ""
+		}
+		return style.Render(text)
+	}
+
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, rule)
+	fmt.Fprintln(w, styles.Header.Render("SUMMARY:"))
+	line("  Total Projects: %d", summary.Total)
+	if compact {
+		line("%s", styles.Muted.Render(fmt.Sprintf("  (Compact Mode: showing %d repos needing action)", shown)))
+	}
+	line("  Dirty:         [ %s ] %s", stat(summary.Dirty, styles.Dirty), note(summary.Dirty, styles.Dirty, "(Action required!)"))
+	line("  Ahead:         [ %s ] %s", stat(summary.Ahead, styles.Ahead), note(summary.Ahead, styles.Ahead, "(Need to push)"))
+	line("  Behind:        [ %s ] %s", stat(summary.Behind, styles.Behind), note(summary.Behind, styles.Behind, "(Need to pull)"))
+	line("  Errors:        [ %s ]", stat(summary.Errors, styles.Behind))
+	if summary.Missing > 0 {
+		line("%s", styles.Muted.Render(fmt.Sprintf("                 %d no longer exist — `gitpulse remove --missing` forgets them", summary.Missing)))
+	}
+	if summary.Public > 0 {
+		line("  Public:        [ %s ] %s", stat(summary.Public, styles.Public), styles.Muted.Render("(readable by anyone)"))
+	}
+	if summary.ThirdParty > 0 {
+		line("  Third party:   [ %s ] %s", stat(summary.ThirdParty, styles.Muted),
+			styles.Muted.Render(fmt.Sprintf("(%d with upstream updates)", summary.ThirdPartyUpdates)))
+	}
+	if summary.SubmodulePointers > 0 {
+		line("  Sub-Pointers:  [ %s ] %s", stat(summary.SubmodulePointers, styles.Muted),
+			styles.Muted.Render("(commit the new pointer when convenient)"))
+	}
+	fmt.Fprintln(w, rule)
 }

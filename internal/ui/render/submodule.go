@@ -29,8 +29,9 @@ func submodulePointerText(sub gitmonitor.SubmoduleInfo) string {
 	}
 }
 
-// printSubmoduleDetails prints one line per submodule for --details.
-func printSubmoduleDetails(subs []gitmonitor.SubmoduleInfo) {
+// submoduleDetailLines renders one line per submodule for -v.
+func submoduleDetailLines(subs []gitmonitor.SubmoduleInfo) []string {
+	lines := make([]string, 0, len(subs))
 	for _, sub := range subs {
 		pointerStyle := styles.Muted
 		if sub.PointerChanged() || sub.PointerStaged {
@@ -41,7 +42,8 @@ func printSubmoduleDetails(subs []gitmonitor.SubmoduleInfo) {
 			cell, _ := statusCell(sub.Status)
 			own = " · " + cell
 		}
-		fmt.Printf("  ├─ Submodule: %-25s%s%s\n", styles.Branch.Render(sub.Path),
-			pointerStyle.Render(submodulePointerText(sub)), own)
+		lines = append(lines, fmt.Sprintf("  ├─ Submodule: %-25s%s%s", styles.Branch.Render(sub.Path),
+			pointerStyle.Render(submodulePointerText(sub)), own))
 	}
+	return lines
 }

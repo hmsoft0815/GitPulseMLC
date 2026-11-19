@@ -72,6 +72,7 @@ func main() {
 	jobs := flag.Int("jobs", 0, "Repositories to scan in parallel (default: one per CPU)")
 	offline := flag.Bool("offline", false, "Do not check online whether remotes are public; use cached results")
 	publicOnly := flag.Bool("public", false, "Only show repositories with a publicly readable remote")
+	layoutFlag := flag.String("layout", "", "Table layout: auto (fit the terminal), wide, narrow or stacked")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "GitPulseMLC  - Monitor the heartbeat of your local Git repositories\n\n")
@@ -126,6 +127,10 @@ func main() {
 		cfg.Settings.CompactMode = true
 	}
 
+	layout, err := chooseLayout(*layoutFlag, cfg.Settings.Layout)
+	if err != nil {
+		log.Fatal(err)
+	}
 	isReportMode := *jsonOutput || *htmlOutput
 	allResults := scanProjects(cfg.Projects, *jobs, *showProgress && !isReportMode)
 	markThirdParty(allResults, cfg.ThirdParty)
@@ -150,7 +155,7 @@ func main() {
 		return
 	}
 
-	render.TUI(allResults, summary, cfg, details)
+	render.TUI(os.Stdout, allResults, summary, cfg, render.TUIOptions{Details: details, Layout: layout, Width: terminalWidth()})
 }
 
 // scanProjects scans all projects in parallel and returns them sorted by name.

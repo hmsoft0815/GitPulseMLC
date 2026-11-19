@@ -72,14 +72,16 @@ func remoteStyle(v visibility.Visibility) lipgloss.Style {
 	return styles.Muted
 }
 
-// printRemoteDetails prints one line per remote for --all.
-func printRemoteDetails(remotes []gitmonitor.RemoteInfo) {
+// remoteDetailLines renders one line per remote for -v.
+func remoteDetailLines(remotes []gitmonitor.RemoteInfo) []string {
+	lines := make([]string, 0, len(remotes))
 	for _, r := range remotes {
 		v := string(r.Visibility)
 		if v == "" {
 			v = "not checked"
 		}
-		fmt.Printf("  ├─ Remote: %-10s %s %s\n", styles.Branch.Render(r.Name),
-			styles.Path.Render(r.URL), remoteStyle(r.Visibility).Render(v))
+		lines = append(lines, fmt.Sprintf("  ├─ Remote: %-10s %s %s", styles.Branch.Render(r.Name),
+			styles.Path.Render(r.URL), remoteStyle(r.Visibility).Render(v)))
 	}
+	return lines
 }

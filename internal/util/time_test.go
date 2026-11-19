@@ -33,3 +33,12 @@ func TestRelativeTime(t *testing.T) {
 		})
 	}
 }
+
+func TestRelativeTimeRecent(t *testing.T) {
+	tests := map[time.Duration]string{20 * time.Second: "just now", 12 * time.Minute: "12m ago", 5 * time.Hour: "5h ago", 3 * 24 * time.Hour: "3d ago"}
+	for ago, want := range tests {
+		if got := RelativeTime(time.Now().Add(-ago)); got != want {
+			t.Errorf("RelativeTime(-%v) = %q, want %q", ago, got, want)
+		}
+	}
+}
