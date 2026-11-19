@@ -152,9 +152,6 @@
         "has_no_remote": {
           "type": "boolean"
         },
-        "main_language": {
-          "type": "string"
-        },
         "local_branches": {
           "type": "array",
           "items": {

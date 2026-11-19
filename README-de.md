@@ -3,8 +3,10 @@
 > **[mlcgo.eu](https://mlcgo.eu)** — Werkzeuge, Bibliotheken und Handbücher · [Produktseite](https://mlcgo.eu/products/gitpulse/) · [English](README.md)
 
 **Ein Befehl zeigt dir, in welchem deiner lokalen Git-Repositories noch etwas offen ist:**
-nicht committete Änderungen, nicht gepushte Commits, vergessene Stashes und verwaiste Branches.
-GitPulse liest nur — es committet, pullt und pusht nie.
+nicht committete Änderungen, nicht gepushte Commits, vergessene Stashes und verwaiste Branches —
+und welche davon jeder im Internet lesen kann.
+GitPulse liest nur — es committet, fetcht, pullt und pusht nie.
+Einzige Netzwerkanfrage ist eine anonyme Prüfung, ob ein Remote öffentlich ist (`--offline` lässt sie weg).
 
 ```
 $ gitpulse
@@ -58,6 +60,8 @@ Das Ergebnis wird 7 Tage im Cache-Verzeichnis des Benutzers gehalten (unter Linu
 - Du arbeitest an **10 oder mehr Repositories** auf einem Rechner oder Server.
 - Dir ist schon Arbeit verloren gegangen, weil ein Commit **nie gepusht** wurde.
 - Du willst einen täglichen **„Was ist noch offen?“-Bericht** per Mail, Cron oder CI.
+- Du checkst **fremde Projekte** zum Ausprobieren aus und willst deren lokale Änderungen von deinen getrennt sehen.
+- Du willst auf einen Blick sehen, welche Repositories **öffentlich** sind.
 
 Wer nur in einem Repository arbeitet, kommt mit `git status` aus.
 
@@ -157,8 +161,14 @@ gitpulse --compact
 # Tägliche Status-Mail per Cron
 0 8 * * 1-5  gitpulse --compact --html | mail -a "Content-Type: text/html" -s "Repo-Status" ich@example.com
 
-# Eigenes Monitoring oder Skripte füttern
-gitpulse --json | jq -r '.results[] | select(.is_clean == false) | .name'
+# Ist etwas öffentlich, das es nicht sein sollte?
+gitpulse --public
+
+# Eigenes Monitoring oder Skripte füttern (eigene Projekte mit offenen Änderungen)
+gitpulse --json | jq -r '.results[] | select(.third_party | not) | select(.is_clean == false) | .name'
+
+# Aufräumen: Projekte vergessen, deren Ordner weg ist
+gitpulse remove --missing --dry-run
 
 # Repositories auf einem Server per SSH prüfen (siehe Remote-Monitoring)
 remote_gitpulse -host user@server -config server-repos.ini -arch linux-amd64

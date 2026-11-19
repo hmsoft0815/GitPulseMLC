@@ -3,8 +3,10 @@
 > **[mlcgo.eu](https://mlcgo.eu)** — tools, libraries and manuals · [Product page](https://mlcgo.eu/products/gitpulse/) · [Deutsch](README-de.md)
 
 **One command shows which of your local Git repositories still need attention:**
-uncommitted changes, unpushed commits, forgotten stashes and stale branches.
-GitPulse only reads your repositories — it never commits, pulls or pushes.
+uncommitted changes, unpushed commits, forgotten stashes and stale branches —
+and which of them anyone on the internet can read.
+GitPulse only reads your repositories — it never commits, fetches, pulls or pushes.
+Its one network request is an anonymous check whether a remote is public (`--offline` skips it).
 
 ```
 $ gitpulse
@@ -58,6 +60,8 @@ Results are cached for 7 days in the user cache directory (`~/.cache/gitpulse/vi
 - You work on **10+ repositories** on one machine or server.
 - You have lost work because a commit **never got pushed** before switching laptops.
 - You want a daily **"what's still open?" report** by mail, cron or CI.
+- You check out **other people's projects** to try them and want their local changes kept apart from yours.
+- You want to know at a glance which repositories are **public**.
 
 If you only ever work in one repository, `git status` is enough.
 
@@ -157,8 +161,14 @@ gitpulse --compact
 # Daily status mail via cron
 0 8 * * 1-5  gitpulse --compact --html | mail -a "Content-Type: text/html" -s "Repo status" me@example.com
 
-# Feed your own monitoring or scripts
-gitpulse --json | jq -r '.results[] | select(.is_clean == false) | .name'
+# Is anything public that should not be?
+gitpulse --public
+
+# Feed your own monitoring or scripts (own projects with uncommitted changes)
+gitpulse --json | jq -r '.results[] | select(.third_party | not) | select(.is_clean == false) | .name'
+
+# Tidy up: forget projects whose folder is gone
+gitpulse remove --missing --dry-run
 
 # Check repositories on a server over SSH (see Remote monitoring)
 remote_gitpulse -host user@server -config server-repos.ini -arch linux-amd64

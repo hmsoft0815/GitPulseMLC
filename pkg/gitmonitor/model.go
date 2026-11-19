@@ -4,6 +4,7 @@
 package gitmonitor
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/hmsoft0815/GitPulseMLC/pkg/visibility"
@@ -95,7 +96,24 @@ type RepoStatus struct {
 	Missing         bool `json:"missing"`           // True if the path is gone or holds no repository any more.
 
 	// --- Metadaten für UI ---
-	MainLanguage string `json:"main_language"`   // Primary programming language (optional).
-	Error        error  `json:"-"`               // Any error that occurred during scanning (e.g., not a git repo).
-	ErrorMsg     string `json:"error,omitempty"` // String representation of the error for JSON output.
+	Error    error  `json:"-"`               // Any error that occurred during scanning (e.g., not a git repo).
+	ErrorMsg string `json:"error,omitempty"` // String representation of the error for JSON output.
+}
+
+// MarshalJSON writes empty lists and maps as [] and {} instead of null, so
+// the output matches docs/schema.json also for repositories that could not
+// be scanned.
+func (r RepoStatus) MarshalJSON() ([]byte, error) {
+	type plain RepoStatus // same fields, without this method
+	p := plain(r)
+	if p.LocalBranches == nil {
+		p.LocalBranches = []BranchInfo{}
+	}
+	if p.IncomingCommits == nil {
+		p.IncomingCommits = []string{}
+	}
+	if p.ChangedFiles == nil {
+		p.ChangedFiles = map[string]int{}
+	}
+	return json.Marshal(p)
 }

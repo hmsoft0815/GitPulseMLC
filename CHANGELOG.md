@@ -22,6 +22,9 @@ All notable changes to GitPulseMLC. Details and reasoning live in the project do
 - GitHub releases no longer carry macOS archives; `install.sh` fetches the signed macOS binaries from mlcgo.eu.
 
 ### Fixed
+- JSON: `ahead`, `behind`, `is_tracking`, `is_diverged`, `incoming_commits` and the other sync fields of the checked-out branch are filled; they were always empty.
+- JSON: lists are `[]` instead of `null`, so the output matches `docs/schema.json`; the never-filled `main_language` is gone.
+- The last fetch time and an interrupted merge are found in submodules and worktrees too.
 - A project name used twice in the config is no longer dropped when gitpulse writes the config; gitpulse warns about it.
 
 ## 1.3.0 — 2026-10-11

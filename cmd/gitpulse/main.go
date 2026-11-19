@@ -137,7 +137,9 @@ func main() {
 
 	// 2. Output processing
 	if *jsonOutput {
-		render.JSON(version, allResults, summary)
+		if err := render.JSON(os.Stdout, version, allResults, summary); err != nil {
+			log.Fatal(err)
+		}
 		return
 	}
 

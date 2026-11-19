@@ -19,7 +19,7 @@ gitpulse - Monitor the heartbeat of local Git repositories
 ## DESCRIPTION
 **gitpulse** is a high-performance dashboard designed to monitor a large number of local Git repositories simultaneously. It provides a centralized view of your development environment, ensuring you never lose track of uncommitted changes, unpushed branches, or stale worktrees.
 
-The tool operates on a "Read-Only" principle, meaning it does not modify any files or perform network operations unless explicitly configured to do so.
+gitpulse only reads your repositories: it never commits, fetches, pulls or pushes. It writes only its own configuration (through the project commands) and a small cache. Its one network request is an anonymous HTTPS check whether a remote is public (see REMOTE VISIBILITY); **--offline** skips it. Third-party projects and remotes on the local network are never checked.
 
 **Note for Windows Users:**
 Windows Defender or other antivirus tools might flag the generated binary as suspicious because it is unsigned and performs concurrent file system scans. If execution is blocked, you may need to add an exclusion for the binary or its directory.
@@ -57,11 +57,19 @@ Flags of these commands may also follow the names and paths. Each accepts **--co
 *   **--config PATH**: Configuration file to create or extend.
 
 ## CONFIGURATION
-The tool uses an INI-style configuration file (`repos.ini`).
+The tool uses an INI-style configuration file (`repos.ini`), looked up in this order: **--config**, `$GITPULSE_CONFIG`, `config/repos.ini` in the current directory, `~/.gitpulsemlc/repos.ini`. **gitpulse add** creates the last one if none exists.
 
 ### [projects]
-Maps project names to absolute filesystem paths.
+Your own projects: names mapped to absolute filesystem paths.
 Example: `my-tool = /home/me/code/my-tool`
+
+### [third_party]
+Other people's repositories, checked out to look at or test; same format. See **gitpulse mark**.
+
+### [disabled_projects]
+Ignored projects: not scanned, and **gitpulse add** does not add them again. See **gitpulse ignore**.
+
+Each project name must be unique across all sections; of a name that occurs twice only the last entry is used.
 
 ### [general]
 *   **replace_path_prefix**: Prefix to be shortened in the output (e.g., `/home/me`).
@@ -78,8 +86,16 @@ Example: `my-tool = /home/me/code/my-tool`
 The REMOTE column shows who can read a repository: **pub** (anyone, without credentials), **priv** (external host that refused an anonymous read), **lan** (file path or host on the local network, never checked online), **?** (unknown) or **—** (no remote). With several remotes the most open one is shown. External hosts are checked with an anonymous HTTPS request to `/info/refs?service=git-upload-pack`, without Git configuration or credentials; SSH aliases are resolved with `ssh -G` first. Results are cached for 7 days in the user cache directory (`gitpulse/visibility.json`).
 
 ## FILES
-*   `config/repos.ini`: Local configuration.
-*   `~/.gitpulsemlc/repos.ini`: Global user configuration.
+*   `~/.gitpulsemlc/repos.ini`: User configuration; created by **gitpulse add**.
+*   `config/repos.ini`: Configuration in the current directory; takes precedence over the user configuration.
+*   `$XDG_CACHE_HOME/gitpulse/visibility.json` (Linux: `~/.cache/…`, macOS: `~/Library/Caches/…`): Cached visibility results; safe to delete.
+
+## ENVIRONMENT
+*   **GITPULSE_CONFIG**: Path of the configuration file, if **--config** is not given.
+
+## EXIT STATUS
+*   **0**: Success.
+*   **1**: A fatal error, e.g. no configuration, or a project command failed.
 
 ## AUTHOR
 Michael Lechner

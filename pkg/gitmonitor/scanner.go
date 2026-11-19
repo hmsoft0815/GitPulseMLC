@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // GitScanner is the interface for gathering information about Git repositories.
@@ -120,16 +119,16 @@ func (s *scanner) scanRepo(status *RepoStatus, repo *git.Repository) (*RepoStatu
 	status.Submodules = s.collectSubmodules(status, wt)
 	countWorktreeChanges(status, wtStatus)
 
-	// 4. Retrieve last fetch time from .git/FETCH_HEAD
-	if status.Path != "" {
-		fetchHeadPath := filepath.Join(status.Path, ".git", "FETCH_HEAD")
-		if info, err := os.Stat(fetchHeadPath); err == nil {
-			status.LastFetchAt = info.ModTime()
-		}
+	// 4. Last fetch and an interrupted merge, read from the Git directory
+	//    (".git" may be a file in submodules and worktrees)
+	if info, ok := gitDirStat(repo, "FETCH_HEAD"); ok {
+		status.LastFetchAt = info.ModTime()
 	}
+	_, status.InMergeConflict = gitDirStat(repo, "MERGE_HEAD")
 
 	// 5. Collect details for all local branches
 	status.LocalBranches, _ = s.collectBranchDetails(repo)
+	s.trackHead(repo, head, status)
 
 	// 6. Count active stashes
 	status.StashCount = s.countStashes(repo)
@@ -177,80 +176,6 @@ func (s *scanner) collectBranchDetails(repo *git.Repository) ([]BranchInfo, erro
 		return nil
 	})
 	return infos, err
-}
-
-// getAheadBehindForBranch calculates how many commits a branch is ahead of or behind its remote tracking branch.
-func (s *scanner) getAheadBehindForBranch(repo *git.Repository, ref *plumbing.Reference) (int, int, error) {
-	cfg, err := repo.Config()
-	if err != nil {
-		return 0, 0, err
-	}
-
-	// Identify the remote tracking branch
-	branchCfg := cfg.Branches[ref.Name().Short()]
-	if branchCfg == nil || branchCfg.Remote == "" || branchCfg.Merge == "" {
-		return 0, 0, nil
-	}
-
-	remoteRefName := plumbing.ReferenceName(fmt.Sprintf("refs/remotes/%s/%s", branchCfg.Remote, branchCfg.Merge.Short()))
-	remoteRef, err := repo.Reference(remoteRefName, true)
-	if err != nil {
-		return 0, 0, nil
-	}
-
-	return s.aheadBehind(repo, ref.Hash(), remoteRef.Hash())
-}
-
-// aheadBehind counts the commits local has that remote lacks (ahead) and the
-// other way round (behind), measured from their merge base.
-func (s *scanner) aheadBehind(repo *git.Repository, local, remote plumbing.Hash) (int, int, error) {
-	localCommit, err := repo.CommitObject(local)
-	if err != nil {
-		return 0, 0, err
-	}
-	remoteCommit, err := repo.CommitObject(remote)
-	if err != nil {
-		return 0, 0, err
-	}
-	bases, err := localCommit.MergeBase(remoteCommit)
-	if err != nil || len(bases) == 0 {
-		return 0, 0, nil
-	}
-	base := bases[0]
-
-	ahead, _ := s.countCommitsBetween(repo, base.Hash, local)
-	behind, _ := s.countCommitsBetween(repo, base.Hash, remote)
-
-	return ahead, behind, nil
-}
-
-// countCommitsBetween returns the number of commits from the 'from' hash to the 'to' hash.
-func (s *scanner) countCommitsBetween(repo *git.Repository, from, to plumbing.Hash) (int, error) {
-	if from == to {
-		return 0, nil
-	}
-
-	cIter, err := repo.Log(&git.LogOptions{From: to})
-	if err != nil {
-		return 0, err
-	}
-	defer cIter.Close()
-
-	count := 0
-	err = cIter.ForEach(func(c *object.Commit) error {
-		// fmt.Printf("Debug: visit %s (looking for %s)\n", c.Hash, from)
-		if c.Hash == from {
-			return fmt.Errorf("reached from")
-		}
-		count++
-		return nil
-	})
-
-	if err != nil && err.Error() == "reached from" {
-		return count, nil
-	}
-
-	return count, nil
 }
 
 // countStashes returns the number of stashed changes by checking the refs/stash reference.
