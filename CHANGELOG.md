@@ -9,11 +9,18 @@ All notable changes to GitPulseMLC. Details and reasoning live in the project do
 - A REMOTE column shows whether a repository is public, private, on the local network or has no remote.
 - `--public` lists only publicly readable repositories; `--offline` skips the online check and uses cached results.
 - `private_hosts` in the config marks Git hosts that are private although they look external.
+- `gitpulse add`, `ignore`, `watch`, `mark` and `list` manage projects without editing the config by hand.
+- Projects can be marked as third party; their local work is shown as hints in a separate block.
+- `own_remotes` sorts new repositories into own and third party; `gitpulse mark --auto` sorts existing ones.
 
 ### Changed
+- `gitpulse init` is now `gitpulse add` and also adds a single repository; `init` still works.
 - The `(No Remote)` marker moved from the status column to the REMOTE column (`—`).
 - A submodule whose only change is a newer commit than the parent records shows as `sub-ptr`, not DIRTY.
 - GitHub releases no longer carry macOS archives; `install.sh` fetches the signed macOS binaries from mlcgo.eu.
+
+### Fixed
+- A project name used twice in the config is no longer dropped when gitpulse writes the config; gitpulse warns about it.
 
 ## 1.3.0 — 2026-10-11
 

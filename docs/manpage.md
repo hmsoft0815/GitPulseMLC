@@ -6,7 +6,13 @@ gitpulse - Monitor the heartbeat of local Git repositories
 ## SYNOPSIS
 **gitpulse** [*OPTIONS*]
 
-**gitpulse init** [*INIT-OPTIONS*] [*DIR* ...]
+**gitpulse add** [*ADD-OPTIONS*] [*PATH* ...] (alias: **init**)
+
+**gitpulse ignore** | **watch** *NAME*|*PATH* ...
+
+**gitpulse mark** *NAME*|*PATH* ... **own**|**3rd** · **gitpulse mark --auto** [**--dry-run**]
+
+**gitpulse list**
 
 ## DESCRIPTION
 **gitpulse** is a high-performance dashboard designed to monitor a large number of local Git repositories simultaneously. It provides a centralized view of your development environment, ensuring you never lose track of uncommitted changes, unpushed branches, or stale worktrees.
@@ -30,11 +36,20 @@ Windows Defender or other antivirus tools might flag the generated binary as sus
 *   **--version**: Print version information and exit.
 *   **--help**: Print a summary of options and exit.
 
-## INIT
-**gitpulse init** searches each *DIR* (default: the current directory) for Git repositories and adds the new ones to the configuration file. If no configuration exists yet, it creates `~/.gitpulsemlc/repos.ini` with default settings. Hidden directories, `node_modules` and `vendor` are skipped, and the search does not descend into a repository it has found. Projects already listed in `[projects]` or `[disabled_projects]` are not added again, so `init` can be run repeatedly for several folders.
+## MANAGING PROJECTS
+**gitpulse add** adds the repository at each *PATH* (default: the current directory), or every repository below *PATH* if it is a plain folder. If no configuration exists yet, it creates `~/.gitpulsemlc/repos.ini` with default settings. Hidden directories, `node_modules` and `vendor` are skipped, and the search does not descend into a repository it has found. Projects already in the configuration, watched or ignored, are not added again. A repository whose remotes are not listed in `own_remotes` is added as third party; without `own_remotes` everything counts as your own and **add** lists the remote owners it found. **init** is the former name of **add**.
 
 *   **--depth N**: Number of directory levels to search (default 4).
 *   **--dry-run**: List what would be added without writing anything.
+*   **--own**, **--3rd**: Add as your own or as third party, whatever the remote.
+
+**gitpulse ignore** stops watching projects, given by name or path, and moves them to `[disabled_projects]`; **add** will not add them again. A repository that is not in the configuration yet is recorded as ignored. **gitpulse watch** watches ignored projects again, sorted by `own_remotes`.
+
+**gitpulse mark** *NAME* ... **own**|**3rd** moves projects between `[projects]` and `[third_party]`. Third-party projects are listed in their own block; local changes, commits, stashes and stale branches there are hints, they are not counted as Dirty, Ahead, Behind or Public, and only new upstream commits make them need action. **gitpulse mark --auto** moves own projects whose remotes are not in `own_remotes` to third party; **--dry-run** only lists them.
+
+**gitpulse list** prints every project with its kind (own, 3rd) and state (watched, ignored, dup). A name that occurs twice is watched only with its last entry; the others are listed as dup.
+
+Flags of these commands may also follow the names and paths. Each accepts **--config PATH**.
 *   **--config PATH**: Configuration file to create or extend.
 
 ## CONFIGURATION
@@ -52,6 +67,7 @@ Example: `my-tool = /home/me/code/my-tool`
 *   **column_name_width**: Minimum width for the project name column (default: 25).
 *   **show_summary**: Toggle the final summary block (default: true).
 *   **compact_mode**: Enable compact mode by default (default: false).
+*   **own_remotes**: Comma-separated remotes that are yours, as host (`git.example.com`) or host and owner (`github.com/me`); `*` matches within a segment. Repositories elsewhere are added as third party.
 *   **private_hosts**: Comma-separated glob patterns of Git hosts that count as local network and are never checked online.
 
 ## REMOTE VISIBILITY

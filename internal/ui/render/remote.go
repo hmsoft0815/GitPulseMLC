@@ -39,7 +39,11 @@ func remoteText(s *gitmonitor.RepoStatus) string {
 		}
 	}
 	text := remoteHost(r)
-	if tag := visibilityTags[r.Visibility]; tag != "" {
+	tag := visibilityTags[r.Visibility]
+	if s.ThirdParty {
+		tag = "3rd" // whose it is matters here, not who can read it
+	}
+	if tag != "" {
 		text += " " + tag
 	}
 	if len(s.Remotes) > 1 {

@@ -54,6 +54,12 @@
         },
         "public": {
           "type": "integer"
+        },
+        "third_party": {
+          "type": "integer"
+        },
+        "third_party_updates": {
+          "type": "integer"
         }
       }
     },
@@ -176,6 +182,9 @@
             "unknown",
             "none"
           ]
+        },
+        "third_party": {
+          "type": "boolean"
         }
       }
     },

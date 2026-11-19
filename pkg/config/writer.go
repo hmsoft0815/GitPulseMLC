@@ -15,25 +15,28 @@ import (
 
 // Project is a single entry of the [projects] section.
 type Project struct {
-	Name string
-	Path string
+	Name    string
+	Path    string
+	Section string // Target section; empty means SectionOwn.
 }
 
 // Known lists the project names and cleaned paths already in the config file,
 // enabled or disabled. A missing file yields empty sets and no error.
 func (m *Manager) Known() (names, paths map[string]bool, err error) {
 	names, paths = make(map[string]bool), make(map[string]bool)
-	cfg, err := ini.Load(m.Path)
+	cfg, err := loadINI(m.Path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return names, paths, nil
 	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("load %s: %w", m.Path, err)
 	}
-	for _, section := range []string{"projects", "disabled_projects"} {
+	for _, section := range projectSections {
 		for _, key := range cfg.Section(section).Keys() {
 			names[key.Name()] = true
-			paths[filepath.Clean(key.String())] = true
+			for _, value := range key.ValueWithShadows() {
+				paths[filepath.Clean(value)] = true
+			}
 		}
 	}
 	return names, paths, nil
@@ -43,16 +46,19 @@ func (m *Manager) Known() (names, paths map[string]bool, err error) {
 // does not exist yet, it is created (with its directory) and seeded with the
 // default settings; replacePrefix, if set, is shown as "~" in the output.
 func (m *Manager) AddProjects(projects []Project, replacePrefix string) error {
-	cfg, err := ini.Load(m.Path)
+	cfg, err := loadINI(m.Path)
 	if errors.Is(err, fs.ErrNotExist) {
 		cfg = newConfigFile(replacePrefix)
 	} else if err != nil {
 		return fmt.Errorf("load %s: %w", m.Path, err)
 	}
 
-	section := cfg.Section("projects")
 	for _, p := range projects {
-		section.Key(p.Name).SetValue(filepath.Clean(p.Path))
+		section := p.Section
+		if section == "" {
+			section = SectionOwn
+		}
+		cfg.Section(section).Key(p.Name).SetValue(filepath.Clean(p.Path))
 	}
 
 	if err := os.MkdirAll(filepath.Dir(m.Path), 0o755); err != nil {
@@ -66,11 +72,11 @@ func (m *Manager) AddProjects(projects []Project, replacePrefix string) error {
 
 // newConfigFile returns a config skeleton with commented default settings.
 func newConfigFile(replacePrefix string) *ini.File {
-	cfg := ini.Empty()
+	cfg := ini.Empty(iniOptions)
 
 	projects := cfg.Section("projects")
-	projects.Comment = "# Repositories to watch: name = absolute path.\n" +
-		"# Add more with `gitpulse init <dir>` or by hand."
+	projects.Comment = "# Your own repositories to watch: name = absolute path.\n" +
+		"# Manage them with `gitpulse add`, `ignore`, `watch`, `mark` and `list`."
 
 	general := cfg.Section("general")
 	general.Comment = "# Shorten paths in the output: replace_path_prefix is shown as replace_with."
@@ -84,8 +90,14 @@ func newConfigFile(replacePrefix string) *ini.File {
 	settings.Key("show_summary").SetValue("true")
 	settings.Key("compact_mode").SetValue("false")
 	settings.Key("compact_mode").Comment = "# true = only list repositories that need action"
+	settings.Key("own_remotes").SetValue("")
+	settings.Key("own_remotes").Comment = "# Your remotes, e.g. github.com/me, git.example.com — others are added as third party"
+
+	thirdParty := cfg.Section(SectionThirdParty)
+	thirdParty.Comment = "# Repositories of others, checked out to look at or test.\n" +
+		"# Local changes here are hints, not action items."
 
 	disabled := cfg.Section("disabled_projects")
-	disabled.Comment = "# Move a project here to stop watching it without forgetting it."
+	disabled.Comment = "# Ignored: not scanned, and `gitpulse add` will not add them again."
 	return cfg
 }

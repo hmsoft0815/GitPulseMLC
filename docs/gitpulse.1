@@ -5,8 +5,21 @@ gitpulse \- Monitor the heartbeat of local Git repositories
 .B gitpulse
 [\fIOPTIONS\fR]
 .br
-.B gitpulse init
-[\fIINIT-OPTIONS\fR] [\fIDIR\fR ...]
+.B gitpulse add
+[\fIADD-OPTIONS\fR] [\fIPATH\fR ...]
+.br
+.B gitpulse ignore
+|
+.B watch
+\fINAME\fR|\fIPATH\fR ...
+.br
+.B gitpulse mark
+\fINAME\fR|\fIPATH\fR ... \fBown\fR|\fB3rd\fR
+.br
+.B gitpulse mark \-\-auto
+[\fB\-\-dry\-run\fR]
+.br
+.B gitpulse list
 .SH DESCRIPTION
 .B gitpulse
 is a high-performance dashboard designed to monitor a large number of local Git repositories simultaneously. It provides a centralized view of your development environment, ensuring you never lose track of uncommitted changes, unpushed branches, or stale worktrees.
@@ -49,15 +62,35 @@ Print the version information and exit.
 .TP
 .B \-\-help
 Print a summary of command-line options and exit.
-.SH INIT
-.B gitpulse init
-searches each \fIDIR\fR (default: the current directory) for Git repositories and adds the new ones to the configuration file. If no configuration exists yet, it creates ~/.gitpulsemlc/repos.ini with default settings. Hidden directories, node_modules and vendor are skipped, and the search does not descend into a repository it has found. Projects already listed in [projects] or [disabled_projects] are not added again.
+.SH MANAGING PROJECTS
+.B gitpulse add
+(alias:
+.BR init )
+adds the repository at each \fIPATH\fR (default: the current directory), or every repository below \fIPATH\fR if it is a plain folder. If no configuration exists yet, it creates ~/.gitpulsemlc/repos.ini with default settings. Hidden directories, node_modules and vendor are skipped, and the search does not descend into a repository it has found. Projects already in the configuration, watched or ignored, are not added again. A repository whose remotes are not listed in own_remotes is added as third party.
+.PP
+.B gitpulse ignore
+moves projects, given by name or path, to [disabled_projects]; add will not add them again. A repository not yet in the configuration is recorded as ignored.
+.B gitpulse watch
+watches ignored projects again.
+.PP
+.B gitpulse mark
+\fINAME\fR ... \fBown\fR|\fB3rd\fR moves projects between [projects] and [third_party]. Third-party projects are listed in their own block; their local work is shown as hints and not counted as Dirty, Ahead, Behind or Public; only new upstream commits need action.
+.B gitpulse mark \-\-auto
+moves own projects whose remotes are not in own_remotes to third party (\fB\-\-dry\-run\fR only lists them).
+.PP
+.B gitpulse list
+prints every project with kind (own, 3rd) and state (watched, ignored, dup).
+.PP
+Options of add:
 .TP
 .BI \-\-depth " N"
 Number of directory levels to search (default 4).
 .TP
 .B \-\-dry\-run
 List what would be added without writing anything.
+.TP
+.BR \-\-own ", " \-\-3rd
+Add as your own or as third party, whatever the remote.
 .TP
 .BI \-\-config " PATH"
 Configuration file to create or extend.
@@ -87,6 +120,8 @@ Example: \fImy-app = /home/me/code/my-app\fR
 \fBshow_summary\fR: Boolean to toggle the final summary block (default: true).
 .br
 \fBcompact_mode\fR: Boolean to enable compact mode by default (default: false).
+.br
+\fBown_remotes\fR: Comma-separated remotes that are yours, as host or host/owner (e.g. github.com/me); repositories elsewhere are added as third party.
 .br
 \fBprivate_hosts\fR: Comma-separated glob patterns of Git hosts that count as local network and are never checked online.
 .SH REMOTE VISIBILITY

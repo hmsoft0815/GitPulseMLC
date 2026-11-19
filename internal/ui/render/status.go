@@ -28,6 +28,7 @@ const (
 	kindStale
 	kindSubmodule
 	kindSubPointer
+	kindHint // muted: work in a third-party repository
 )
 
 // statusPart is one piece of the status column, e.g. "↑2".
@@ -79,6 +80,24 @@ func statusParts(s *gitmonitor.RepoStatus) (parts []statusPart, needsAction bool
 	if subPointers > 0 {
 		parts = append(parts, statusPart{kindSubPointer, fmt.Sprintf("%d sub-ptr", subPointers)})
 	}
+	if s.ThirdParty {
+		return muteThirdParty(parts)
+	}
+	return parts, needsAction
+}
+
+// muteThirdParty turns local work in a third-party repository into hints.
+// Only new upstream commits (↓) still count, as an update to look at.
+func muteThirdParty(parts []statusPart) ([]statusPart, bool) {
+	needsAction := false
+	for i, p := range parts {
+		switch p.kind {
+		case kindBehind:
+			needsAction = true
+		case kindDirty, kindAhead, kindStash, kindSubmodule:
+			parts[i].kind = kindHint
+		}
+	}
 	return parts, needsAction
 }
 
@@ -93,6 +112,7 @@ var terminalStyles = map[partKind]lipgloss.Style{
 	kindStale:      styles.Muted,
 	kindSubmodule:  styles.Dirty,
 	kindSubPointer: styles.Muted,
+	kindHint:       styles.Muted,
 }
 
 // statusCell renders the STATUS column for the terminal.

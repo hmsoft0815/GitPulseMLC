@@ -18,10 +18,10 @@ func TestAddProjectsCreatesAndExtends(t *testing.T) {
 		t.Fatalf("Known() on missing file = %v, %v, %v; want empty, nil", names, paths, err)
 	}
 
-	if err := m.AddProjects([]Project{{"app", "/code/app"}}, "/home/me"); err != nil {
+	if err := m.AddProjects([]Project{{Name: "app", Path: "/code/app"}}, "/home/me"); err != nil {
 		t.Fatalf("AddProjects (create): %v", err)
 	}
-	if err := m.AddProjects([]Project{{"web", "/code/web#1"}}, "/ignored"); err != nil {
+	if err := m.AddProjects([]Project{{Name: "web", Path: "/code/web#1"}}, "/ignored"); err != nil {
 		t.Fatalf("AddProjects (extend): %v", err)
 	}
 

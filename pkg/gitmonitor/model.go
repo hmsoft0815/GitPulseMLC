@@ -21,6 +21,11 @@ type Summary struct {
 	SubmodulePointers int `json:"submodule_pointers"`
 	// Public counts repositories with at least one anonymously readable remote.
 	Public int `json:"public"`
+	// ThirdParty counts third-party repositories; they are left out of
+	// Dirty, Ahead, Behind, Public and SubmodulePointers.
+	ThirdParty int `json:"third_party"`
+	// ThirdPartyUpdates counts third-party repositories behind their upstream.
+	ThirdPartyUpdates int `json:"third_party_updates"`
 }
 
 // RemoteInfo describes one configured remote. Host and Visibility are empty
@@ -45,8 +50,9 @@ type BranchInfo struct {
 // RepoStatus repräsentiert den vollständigen Zustand eines Git-Repositories.
 type RepoStatus struct {
 	// --- Identität ---
-	Name string `json:"name"` // Ordnername oder Projektname aus INI
-	Path string `json:"path"` // Absoluter Pfad auf der Festplatte
+	Name       string `json:"name"`        // Ordnername oder Projektname aus INI
+	Path       string `json:"path"`        // Absoluter Pfad auf der Festplatte
+	ThirdParty bool   `json:"third_party"` // Fremdes Repo, nur zum Ansehen/Testen ausgecheckt
 
 	// --- Branch & Head ---
 	CurrentBranch string       `json:"current_branch"`  // The currently checked-out branch name.

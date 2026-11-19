@@ -23,6 +23,7 @@ func TestRemoteText(t *testing.T) {
 		{"public", gitmonitor.RepoStatus{Remotes: []gitmonitor.RemoteInfo{github}, Visibility: visibility.Public}, "github pub"},
 		{"most open decides", gitmonitor.RepoStatus{Remotes: []gitmonitor.RemoteInfo{nas, github}, Visibility: visibility.Public}, "github pub +1"},
 		{"lan", gitmonitor.RepoStatus{Remotes: []gitmonitor.RemoteInfo{nas}, Visibility: visibility.Local}, "nas.local lan"},
+		{"third party shows kind, not visibility", gitmonitor.RepoStatus{ThirdParty: true, Remotes: []gitmonitor.RemoteInfo{{Name: "origin", URL: "https://github.com/x/y"}}}, "github 3rd"},
 		{"not checked", gitmonitor.RepoStatus{Remotes: []gitmonitor.RemoteInfo{{Name: "origin", URL: "https://gitlab.com/o/r.git"}}}, "gitlab"},
 		{"file remote", gitmonitor.RepoStatus{Remotes: []gitmonitor.RemoteInfo{{Name: "origin", URL: "/srv/r.git", Visibility: visibility.Local}}, Visibility: visibility.Local}, "file lan"},
 	}

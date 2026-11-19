@@ -38,6 +38,7 @@ var htmlColors = map[partKind]string{
 	kindStale:      "color:#6b7280;font-size:12px",
 	kindSubmodule:  "color:#b45309;font-weight:bold",
 	kindSubPointer: "color:#6b7280;font-size:12px",
+	kindHint:       "color:#6b7280",
 }
 
 type htmlPart struct {
@@ -47,6 +48,7 @@ type htmlPart struct {
 
 type htmlRow struct {
 	Name, Branch, Path, Error string
+	SectionStart              string // heading shown above this row, e.g. "Third party"
 	Remote                    htmlPart
 	Parts                     []htmlPart
 }
@@ -69,6 +71,7 @@ func HTML(w io.Writer, version string, results []*gitmonitor.RepoStatus, summary
 		Summary:   summary,
 		Compact:   settings.CompactMode,
 	}
+	thirdPartyShown := false
 	for _, s := range results {
 		parts, needsAction := statusParts(s)
 		if settings.CompactMode && !needsAction {
@@ -76,10 +79,11 @@ func HTML(w io.Writer, version string, results []*gitmonitor.RepoStatus, summary
 			continue
 		}
 		row := htmlRow{
-			Name:   s.Name,
-			Branch: s.CurrentBranch,
-			Path:   ShortenPath(s.Path, settings.ReplacePathPrefix, settings.ReplaceWith),
-			Error:  s.ErrorMsg,
+			SectionStart: sectionStart(s, &thirdPartyShown),
+			Name:         s.Name,
+			Branch:       s.CurrentBranch,
+			Path:         ShortenPath(s.Path, settings.ReplacePathPrefix, settings.ReplaceWith),
+			Error:        s.ErrorMsg,
 		}
 		remoteCSS := "color:#6b7280;font-size:12px"
 		if s.Visibility == visibility.Public && colored {
@@ -101,6 +105,15 @@ func HTML(w io.Writer, version string, results []*gitmonitor.RepoStatus, summary
 	return nil
 }
 
+// sectionStart returns the heading for the first third-party row.
+func sectionStart(s *gitmonitor.RepoStatus, shown *bool) string {
+	if !s.ThirdParty || *shown {
+		return ""
+	}
+	*shown = true
+	return "Third party"
+}
+
 var htmlTemplate = template.Must(template.New("report").Parse(`<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>GitPulseMLC Report</title></head>
 <body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;background:#ffffff;margin:0;padding:20px">
@@ -115,7 +128,8 @@ var htmlTemplate = template.Must(template.New("report").Parse(`<!DOCTYPE html>
 <th style="text-align:left;padding:10px;background:#1f2937;color:#ffffff;font-size:12px;text-transform:uppercase">Path</th>
 </tr></thead>
 <tbody>
-{{range .Rows}}<tr>
+{{range .Rows}}{{if .SectionStart}}<tr><td colspan="5" style="padding:16px 10px 6px 10px;border-bottom:2px solid #d1d5db;font-weight:bold">{{.SectionStart}} <span style="font-weight:normal;color:#6b7280;font-size:12px">checked out to look at or test; local changes are only hints</span></td></tr>
+{{end}}<tr>
 <td style="padding:10px;border-bottom:1px solid #e5e7eb"><strong>{{.Name}}</strong></td>
 <td style="padding:10px;border-bottom:1px solid #e5e7eb;font-family:Consolas,Menlo,monospace">{{.Branch}}</td>
 <td style="padding:10px;border-bottom:1px solid #e5e7eb"><span style="{{.Remote.Style}}">{{.Remote.Text}}</span></td>
@@ -130,7 +144,8 @@ Total <strong>{{.Summary.Total}}</strong> &nbsp;·&nbsp;
 Dirty <strong style="color:#b45309">{{.Summary.Dirty}}</strong> &nbsp;·&nbsp;
 Ahead <strong style="color:#2563eb">{{.Summary.Ahead}}</strong> &nbsp;·&nbsp;
 Behind <strong style="color:#dc2626">{{.Summary.Behind}}</strong> &nbsp;·&nbsp;
-Errors <strong style="color:#dc2626">{{.Summary.Errors}}</strong>{{if .Summary.Public}} &nbsp;·&nbsp;
+Errors <strong style="color:#dc2626">{{.Summary.Errors}}</strong>{{if .Summary.ThirdParty}} &nbsp;·&nbsp;
+<span style="color:#6b7280">Third party {{.Summary.ThirdParty}} ({{.Summary.ThirdPartyUpdates}} with upstream updates)</span>{{end}}{{if .Summary.Public}} &nbsp;·&nbsp;
 Public <strong style="color:#c2410c">{{.Summary.Public}}</strong>{{end}}{{if .Summary.SubmodulePointers}} &nbsp;·&nbsp;
 <span style="color:#6b7280">Submodule pointers to commit {{.Summary.SubmodulePointers}}</span>{{end}}
 </td></tr></table>

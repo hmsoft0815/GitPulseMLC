@@ -30,6 +30,17 @@ compact_mode = false
 # .local/.lan/.home/.internal/.fritz.box and private IPs are local anyway.
 # private_hosts = git.example.com, *.corp.example
 
+# Remotes that are yours: a host, or host/owner; * matches within a segment.
+# `gitpulse add` puts repositories with remotes elsewhere into [third_party].
+# A repository with no remote or a local-network remote is always yours.
+# own_remotes = github.com/me, gitlab.com/my-group, git.example.com
+
+[third_party]
+# Other people's repositories, checked out to look at or test.
+# Local changes here are hints, not action items; `gitpulse mark NAME 3rd|own` moves them.
+# whisper.cpp = /home/me/src/whisper.cpp
+
 [disabled_projects]
-# Projects in this section are ignored by the scanner
+# Ignored: not scanned, and `gitpulse add` will not add them again.
+# `gitpulse ignore NAME` puts a project here, `gitpulse watch NAME` takes it back.
 # old-tool = /home/me/code/old-tool

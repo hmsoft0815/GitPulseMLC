@@ -22,7 +22,9 @@ You can also find the formal JSON Schema in [schema.json](./schema.json).
 | `ahead` | int | Number of repositories with local commits not yet pushed. |
 | `behind` | int | Number of repositories with remote commits not yet pulled. |
 | `errors` | int | Number of projects that failed to scan (e.g., directory missing). |
-| `public` | int | Number of repositories with at least one publicly readable remote. |
+| `public` | int | Number of own repositories with at least one publicly readable remote. |
+| `third_party` | int | Number of third-party repositories. They are not counted in `dirty`, `ahead`, `behind`, `public` or `submodule_pointers`. |
+| `third_party_updates` | int | Number of third-party repositories behind their upstream. |
 | `submodule_pointers` | int | Number of repositories with a submodule that moved past the commit the parent records, and nothing else to do in it. |
 
 ---
@@ -32,6 +34,7 @@ You can also find the formal JSON Schema in [schema.json](./schema.json).
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `name` | string | The display name of the project. |
+| `third_party` | boolean | `true` if the project is listed in `[third_party]`: somebody else's repository, checked out to look at or test. Its remotes are not checked for visibility. |
 | `path` | string | The absolute filesystem path (or shortened path if replacement settings are used). |
 | `current_branch` | string | Name of the currently checked-out branch. |
 | `last_commit_id` | string | SHA-1 hash of the latest commit on HEAD. |

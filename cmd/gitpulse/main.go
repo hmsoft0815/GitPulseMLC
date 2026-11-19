@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -45,6 +46,16 @@ func findConfig(customPath string) string {
 	return ""
 }
 
+// commands are the project subcommands; init is the old name of add.
+var commands = map[string]func(args []string, globalConfig string, out io.Writer) error{
+	"add":    runAdd,
+	"init":   runAdd,
+	"ignore": runIgnore,
+	"watch":  runWatch,
+	"mark":   runMark,
+	"list":   runList,
+}
+
 func main() {
 	// CLI Flags
 	configFlag := flag.String("config", "", "Path to the configuration file (repos.ini)")
@@ -63,8 +74,13 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "GitPulseMLC  - Monitor the heartbeat of your local Git repositories\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
-		fmt.Fprintf(os.Stderr, "  gitpulse [flags]              show the status of all configured repositories\n")
-		fmt.Fprintf(os.Stderr, "  gitpulse init [flags] [DIR]   find repositories below DIR and add them to the config\n\n")
+		fmt.Fprintf(os.Stderr, "  gitpulse [flags]                     show the status of all watched repositories\n")
+		fmt.Fprintf(os.Stderr, "  gitpulse add [PATH|DIR ...]          add a repository, or all below a folder (alias: init)\n")
+		fmt.Fprintf(os.Stderr, "  gitpulse ignore NAME|PATH ...        stop watching, but remember\n")
+		fmt.Fprintf(os.Stderr, "  gitpulse watch NAME|PATH ...         watch an ignored project again\n")
+		fmt.Fprintf(os.Stderr, "  gitpulse mark NAME|PATH ... own|3rd  your own project or third party (--auto: by own_remotes)\n")
+		fmt.Fprintf(os.Stderr, "  gitpulse list                        all projects with kind and state\n")
+		fmt.Fprintf(os.Stderr, "  gitpulse COMMAND --help              flags of a command\n\n")
 		fmt.Fprintf(os.Stderr, "Flags:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nConfig Lookup Order:\n")
@@ -76,12 +92,13 @@ func main() {
 
 	flag.Parse()
 
-	if flag.Arg(0) == "init" {
-		if err := runInit(flag.Args()[1:], *configFlag, os.Stdout); err != nil {
+	if run, ok := commands[flag.Arg(0)]; ok {
+		if err := run(flag.Args()[1:], *configFlag, os.Stdout); err != nil {
 			if errors.Is(err, flag.ErrHelp) {
 				os.Exit(0)
 			}
-			log.Fatalf("init: %v", err)
+			fmt.Fprintf(os.Stderr, "gitpulse %s: %v\n", flag.Arg(0), err)
+			os.Exit(1)
 		}
 		return
 	}
@@ -108,6 +125,7 @@ func main() {
 
 	isReportMode := *jsonOutput || *htmlOutput
 	allResults := scanProjects(cfg.Projects, *jobs, *showProgress && !isReportMode)
+	markThirdParty(allResults, cfg.ThirdParty)
 	checkVisibility(allResults, cfg.Settings, *offline)
 	if *publicOnly {
 		allResults = onlyPublic(allResults)
@@ -151,6 +169,25 @@ func scanProjects(projects map[string]string, jobs int, progress bool) []*gitmon
 	return results
 }
 
+// markThirdParty flags third-party repositories and moves them behind your
+// own ones, keeping the order by name within each group.
+func markThirdParty(results []*gitmonitor.RepoStatus, thirdParty map[string]bool) {
+	for _, r := range results {
+		r.ThirdParty = thirdParty[r.Name]
+	}
+	sort.SliceStable(results, func(i, j int) bool { return !results[i].ThirdParty && results[j].ThirdParty })
+}
+
+// hasBehindBranch reports whether any local branch is behind its upstream.
+func hasBehindBranch(s *gitmonitor.RepoStatus) bool {
+	for _, b := range s.LocalBranches {
+		if b.Behind > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // summarize counts repositories by state; a repository with several ahead
 // branches counts once.
 func summarize(results []*gitmonitor.RepoStatus) gitmonitor.Summary {
@@ -158,6 +195,13 @@ func summarize(results []*gitmonitor.RepoStatus) gitmonitor.Summary {
 	for _, s := range results {
 		if s.ErrorMsg != "" {
 			summary.Errors++
+			continue
+		}
+		if s.ThirdParty {
+			summary.ThirdParty++
+			if hasBehindBranch(s) {
+				summary.ThirdPartyUpdates++
+			}
 			continue
 		}
 		subAction, subPointers := s.SubmoduleAttention()

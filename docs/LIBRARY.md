@@ -62,10 +62,13 @@ func load() {
 ```
 
 To add projects programmatically (creating the file if needed), use `config.NewManager(path).AddProjects(...)`;
-`Known()` returns the names and paths already listed.
+`Known()` returns the names and paths already listed. `Entries()` lists every project with its section
+(`config.SectionOwn`, `SectionThirdParty`, `SectionIgnored`), `Lookup(nameOrPath)` finds one, and
+`Move(name, section)` ignores, watches or re-marks it while keeping comments in the file.
+`Config.ThirdParty` tells which watched projects are third party.
 
 ### 3. `discover`
-Finds Git repositories below a directory — the engine behind `gitpulse init`.
+Finds Git repositories below a directory — the engine behind `gitpulse add`.
 
 ```go
 import "github.com/hmsoft0815/GitPulseMLC/pkg/discover"
@@ -98,6 +101,18 @@ _ = checker.Save()
 ```
 
 The scanner fills `RepoStatus.Remotes` with names and credential-free URLs; it does not touch the network. Run a `Checker` over them to fill `Host` and `Visibility`.
+
+### 5. `ownership`
+
+Decides whether a repository is yours or third party, from its remotes and your `own_remotes` patterns.
+
+```go
+import "github.com/hmsoft0815/GitPulseMLC/pkg/ownership"
+
+c := &ownership.Classifier{OwnRemotes: []string{"github.com/me", "git.example.com"}}
+urls, _ := ownership.RemoteURLs("/home/me/src/whisper.cpp")
+fmt.Println(c.Classify(urls)) // "3rd" — no remote of yours, none on the local network
+```
 
 ## JSON Export
 

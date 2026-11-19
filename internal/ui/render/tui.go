@@ -63,8 +63,14 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 		styles.Header.Render("PATH"))
 	fmt.Println(styles.Muted.Render(strings.Repeat("─", maxNameLen+maxBranchLen+maxRemoteLen+maxStatusLen+60)))
 
+	thirdPartyShown := false
 	for _, info := range toDisplay {
 		s := info.status
+		if s.ThirdParty && !thirdPartyShown {
+			thirdPartyShown = true
+			fmt.Printf("\n%s %s\n", styles.Header.Render("THIRD PARTY"),
+				styles.Muted.Render("— checked out to look at or test; local changes are only hints"))
+		}
 		branch := "???"
 		if s.ErrorMsg == "" {
 			branch = s.CurrentBranch
@@ -146,6 +152,10 @@ func TUI(allResults []*gitmonitor.RepoStatus, summary gitmonitor.Summary, cfg *c
 		if summary.Public > 0 {
 			fmt.Printf("  Public:        [ %s ] %s\n", renderStat(summary.Public, styles.Public),
 				styles.Muted.Render("(readable by anyone)"))
+		}
+		if summary.ThirdParty > 0 {
+			fmt.Printf("  Third party:   [ %s ] %s\n", renderStat(summary.ThirdParty, styles.Muted),
+				styles.Muted.Render(fmt.Sprintf("(%d with upstream updates)", summary.ThirdPartyUpdates)))
 		}
 		if summary.SubmodulePointers > 0 {
 			fmt.Printf("  Sub-Pointers:  [ %s ] %s\n", renderStat(summary.SubmodulePointers, styles.Muted),

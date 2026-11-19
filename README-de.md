@@ -77,14 +77,15 @@ Pakete für Debian/Ubuntu (`.deb`), Fedora (`.rpm`), Alpine (`.apk`) sowie Archi
 [Release-Seite](https://github.com/hmsoft0815/GitPulseMLC/releases). **macOS**-Binaries — signiert und notarisiert — gibt es auf
 [mlcgo.eu](https://mlcgo.eu/products/gitpulse/); `install.sh` holt sie von dort.
 
-**2. Sag gitpulse, wo deine Repositories liegen**
+**2. Sag gitpulse, welche Repositories es beobachten soll**
 
 ```bash
-gitpulse init ~/code          # findet jedes Git-Repository unterhalb von ~/code
-gitpulse init ~/work          # nochmal aufrufen, um weitere Ordner hinzuzufügen
+gitpulse add ~/code           # jedes Git-Repository unterhalb von ~/code
+gitpulse add                  # nur das Repository, in dem du gerade bist
 ```
 
 Das schreibt `~/.gitpulsemlc/repos.ini`. Mit `--dry-run` siehst du vorher, was eingetragen würde.
+[Projekte verwalten](#projekte-verwalten) erklärt Ignorieren, 3rd-party-Repositories und mehr.
 
 **3. Hinschauen**
 
@@ -93,6 +94,54 @@ gitpulse                      # alle Repositories
 gitpulse --compact            # nur die mit Handlungsbedarf
 gitpulse -v                   # dazu jeder Branch mit Sync-Stand und Alter
 ```
+
+## Projekte verwalten
+
+```bash
+gitpulse add ~/code              # alle Repositories unter einem Ordner (oder eins: gitpulse add PFAD)
+gitpulse ignore altes-tool       # nicht mehr beobachten — per Name oder Pfad, z. B. `gitpulse ignore .`
+gitpulse watch altes-tool        # wieder beobachten
+gitpulse mark whisper.cpp 3rd    # Repository von jemand anderem (`own` macht es wieder zu deinem)
+gitpulse list                    # alle Projekte mit Art und Zustand
+```
+
+**Eigenes oder 3rd party.** Oft checkst du fremde Repositories aus, um sie anzusehen oder zu testen,
+und hast dort lokale Änderungen, die nie upstream gehen sollen. Markiere sie als 3rd party:
+
+- sie stehen in einem eigenen Block am Ende, mit `3rd` in der Spalte REMOTE;
+- lokale Änderungen, lokale Commits, Stashes und alte Branches sind dort gedämpfte Hinweise, kein „Action required“;
+- sie zählen nicht bei Dirty, Ahead, Behind oder Public, und `--compact` blendet sie aus;
+- neue Commits upstream (`↓3`) bleiben sichtbar — das ist bei ihnen das Einzige, was zählt.
+
+gitpulse sortiert neue Repositories selbst ein, sobald es weiß, welche Remotes deine sind:
+
+```ini
+[settings]
+own_remotes = github.com/ich, gitlab.com/meine-gruppe, git.example.com
+```
+
+Ein Eintrag ist ein Host (`git.example.com`) oder Host und Owner (`github.com/ich`); `*` gilt innerhalb eines Abschnitts.
+Ein Repository ist deins, wenn ein Remote passt, ein Remote im lokalen Netz liegt oder es gar kein Remote hat.
+Solange `own_remotes` fehlt, gilt alles als deins, und `gitpulse add` schlägt die gefundenen Remote-Owner vor.
+`gitpulse mark --auto` sortiert die Projekte, die du schon hast (vorher mit `--dry-run` ansehen).
+
+**Ignorierte** Projekte bleiben gemerkt, `gitpulse add` holt sie also nie zurück.
+`gitpulse ignore PFAD` geht auch für ein Repository, das noch nicht in der Config steht.
+
+Die Config hat je Zustand eine Section — reines ini, auch von Hand bearbeitbar:
+
+```ini
+[projects]           # eigene
+webshop = /home/ich/code/webshop
+
+[third_party]        # zum Ansehen oder Testen ausgecheckt
+whisper.cpp = /home/ich/src/whisper.cpp
+
+[disabled_projects]  # ignoriert
+altes-tool = /home/ich/code/altes-tool
+```
+
+Jeder Name darf nur einmal vorkommen. Steht ein Name doppelt drin, wird nur der letzte Eintrag beobachtet; gitpulse warnt, und `gitpulse list` markiert den anderen als `dup`.
 
 ## Typische Einsätze
 
@@ -117,8 +166,14 @@ remote_gitpulse -host user@server -config server-repos.ini -arch linux-amd64
 ### Kommandozeile
 
 ```
-gitpulse [flags]                 Status aller konfigurierten Repositories
-gitpulse init [flags] [DIR ...]  Repositories unter DIR finden und in die Config eintragen
+gitpulse [flags]                       Status aller beobachteten Repositories
+gitpulse add [flags] [PFAD|DIR ...]    ein Repository eintragen, oder alle unter einem Ordner (Alias: init)
+gitpulse ignore NAME|PFAD ...          nicht mehr beobachten, aber merken
+gitpulse watch NAME|PFAD ...           ignoriertes Projekt wieder beobachten
+gitpulse mark NAME|PFAD ... own|3rd    eigenes Projekt oder 3rd party
+gitpulse mark --auto [--dry-run]       eigene Projekte nach own_remotes sortieren
+gitpulse list                          alle Projekte mit Art und Zustand
+gitpulse BEFEHL --help                 Flags eines Befehls
 
 Flags:
   --compact      nur Repositories mit Handlungsbedarf
@@ -133,14 +188,15 @@ Flags:
   --config PATH  diese Config-Datei verwenden
   --version      Version ausgeben
 
-init-Flags:
+add-Flags:
   --depth N      wie viele Verzeichnisebenen durchsucht werden (Standard 4)
   --dry-run      nur auflisten, was eingetragen würde
+  --own, --3rd   als eigenes / 3rd party eintragen, egal welches Remote
   --config PATH  Config-Datei, die angelegt oder erweitert wird
 ```
 
-`init` überspringt versteckte Ordner, `node_modules` und `vendor` und schaut nicht in ein bereits gefundenes Repository hinein.
-Projekte, die schon in der Config stehen — aktiv oder deaktiviert —, werden nie doppelt eingetragen.
+`add` überspringt versteckte Ordner, `node_modules` und `vendor` und schaut nicht in ein bereits gefundenes Repository hinein.
+Projekte, die schon in der Config stehen — beobachtet oder ignoriert —, werden nie doppelt eingetragen. Flags dürfen auch hinter den Pfaden stehen.
 
 ### Konfiguration
 
@@ -163,6 +219,11 @@ show_summary = true
 compact_mode = false
 # Hosts, die privat sind, obwohl sie extern aussehen (Glob-Muster)
 private_hosts = git.example.com, *.corp.example
+# deine Remotes; Repositories anderswo werden als 3rd party eingetragen
+own_remotes = github.com/ich, git.example.com
+
+[third_party]
+whisper.cpp = /home/ich/src/whisper.cpp
 
 [disabled_projects]
 # hierher verschoben: wird nicht gescannt, bleibt aber gemerkt

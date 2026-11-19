@@ -30,6 +30,9 @@ func checkVisibility(results []*gitmonitor.RepoStatus, settings config.Settings,
 	sem := make(chan struct{}, maxProbes)
 	var wg sync.WaitGroup
 	for _, r := range results {
+		if r.ThirdParty {
+			continue // somebody else's repository: being public is normal there
+		}
 		for i := range r.Remotes {
 			remote := &r.Remotes[i]
 			wg.Go(func() {
@@ -43,7 +46,7 @@ func checkVisibility(results []*gitmonitor.RepoStatus, settings config.Settings,
 	wg.Wait()
 
 	for _, r := range results {
-		if r.ErrorMsg != "" {
+		if r.ErrorMsg != "" || r.ThirdParty {
 			continue
 		}
 		r.Visibility = visibility.None

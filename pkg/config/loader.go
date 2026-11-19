@@ -22,12 +22,24 @@ type Settings struct {
 	// PrivateHosts are glob patterns of Git hosts that count as local network
 	// and are never probed for public access (e.g. "git.example.com, *.corp").
 	PrivateHosts []string
+	// OwnRemotes are remotes that belong to you, as "host/owner" or "host"
+	// patterns (e.g. "github.com/me", "git.example.com"). New repositories
+	// with a remote elsewhere are added as third party.
+	OwnRemotes []string
 }
+
+// Sections of the config file that list projects.
+const (
+	SectionOwn        = "projects"          // Your own projects.
+	SectionThirdParty = "third_party"       // Checked out to look at or test.
+	SectionIgnored    = "disabled_projects" // Remembered, but not scanned.
+)
 
 // Config holds the mapping of project names to their absolute paths and global settings.
 type Config struct {
-	Projects map[string]string // Mapping of project name to its file system path.
-	Settings Settings          // Global application settings.
+	Projects   map[string]string // Watched projects, own and third party: name → path.
+	ThirdParty map[string]bool   // Names of watched projects that are third party.
+	Settings   Settings          // Global application settings.
 }
 
 // Manager handles reading and writing the configuration file.
@@ -42,26 +54,26 @@ func NewManager(path string) *Manager {
 
 // Load reads the configuration from the file system.
 func (m *Manager) Load() (*Config, error) {
-	cfg, err := ini.Load(m.Path)
+	cfg, err := loadINI(m.Path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load ini file: %w", err)
 	}
 
-	// 1. Parse Projects
+	// 1. Parse Projects: own first, third party after
 	projects := make(map[string]string)
-	projSection := cfg.Section("projects")
-	if projSection != nil {
-		for _, key := range projSection.Keys() {
-			repoPath := key.String()
-			cleanedPath := filepath.Clean(repoPath)
-
-			// Check if the path ends with .git (common mistake)
-			if strings.HasSuffix(cleanedPath, ".git") {
-				fmt.Fprintf(os.Stderr, "Warning: Project '%s' path ends in '.git'. Using parent directory: %s\n", key.Name(), filepath.Dir(cleanedPath))
-				cleanedPath = filepath.Dir(cleanedPath)
+	thirdParty := make(map[string]bool)
+	for _, section := range []string{SectionOwn, SectionThirdParty} {
+		for _, key := range cfg.Section(section).Keys() {
+			if values := key.ValueWithShadows(); len(values) > 1 {
+				fmt.Fprintf(os.Stderr, "Warning: project name '%s' is used %d times; only %s is watched — rename the others\n",
+					key.Name(), len(values), values[len(values)-1])
 			}
-
-			projects[key.Name()] = cleanedPath
+			if _, dup := projects[key.Name()]; dup {
+				fmt.Fprintf(os.Stderr, "Warning: project '%s' is listed twice; using [%s]\n", key.Name(), section)
+			}
+			values := key.ValueWithShadows()
+			projects[key.Name()] = projectPath(key.Name(), values[len(values)-1])
+			thirdParty[key.Name()] = section == SectionThirdParty
 		}
 	}
 
@@ -84,6 +96,7 @@ func (m *Manager) Load() (*Config, error) {
 			settings.CompactMode = val
 		}
 		settings.PrivateHosts = splitList(setSection.Key("private_hosts").String())
+		settings.OwnRemotes = splitList(setSection.Key("own_remotes").String())
 	}
 
 	// 3. Parse General Settings
@@ -94,9 +107,21 @@ func (m *Manager) Load() (*Config, error) {
 	}
 
 	return &Config{
-		Projects: projects,
-		Settings: settings,
+		Projects:   projects,
+		ThirdParty: thirdParty,
+		Settings:   settings,
 	}, nil
+}
+
+// projectPath cleans a configured path; a path ending in .git (a common
+// mistake) points to its parent directory.
+func projectPath(name, repoPath string) string {
+	cleaned := filepath.Clean(repoPath)
+	if strings.HasSuffix(cleaned, ".git") {
+		fmt.Fprintf(os.Stderr, "Warning: Project '%s' path ends in '.git'. Using parent directory: %s\n", name, filepath.Dir(cleaned))
+		cleaned = filepath.Dir(cleaned)
+	}
+	return cleaned
 }
 
 // splitList splits a comma-separated value and drops empty items.
@@ -112,10 +137,10 @@ func splitList(value string) []string {
 
 // AddProject adds or updates a project in the configuration.
 func (m *Manager) AddProject(name, path string) error {
-	cfg, err := ini.Load(m.Path)
+	cfg, err := loadINI(m.Path)
 	if err != nil {
 		// If file doesn't exist, create a new one
-		cfg = ini.Empty()
+		cfg = ini.Empty(iniOptions)
 	}
 
 	cleanedPath := filepath.Clean(path)
@@ -129,7 +154,7 @@ func (m *Manager) AddProject(name, path string) error {
 
 // RemoveProject removes a project from the configuration.
 func (m *Manager) RemoveProject(name string) error {
-	cfg, err := ini.Load(m.Path)
+	cfg, err := loadINI(m.Path)
 	if err != nil {
 		return err
 	}
@@ -139,28 +164,13 @@ func (m *Manager) RemoveProject(name string) error {
 }
 
 // ToggleProject moves a project between [projects] and [disabled_projects].
+//
+// Deprecated: use Move, which also knows [third_party].
 func (m *Manager) ToggleProject(name string, enable bool) error {
-	cfg, err := ini.Load(m.Path)
-	if err != nil {
-		return err
+	if enable {
+		return m.Move(name, SectionOwn)
 	}
-
-	sourceSection := "disabled_projects"
-	targetSection := "projects"
-	if !enable {
-		sourceSection = "projects"
-		targetSection = "disabled_projects"
-	}
-
-	key := cfg.Section(sourceSection).Key(name)
-	if key == nil {
-		return fmt.Errorf("project '%s' not found in section [%s]", name, sourceSection)
-	}
-
-	cfg.Section(targetSection).Key(name).SetValue(key.String())
-	cfg.Section(sourceSection).DeleteKey(name)
-
-	return cfg.SaveTo(m.Path)
+	return m.Move(name, SectionIgnored)
 }
 
 // LoadConfig is a convenience wrapper for NewManager(path).Load().

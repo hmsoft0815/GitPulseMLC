@@ -77,14 +77,15 @@ Debian/Ubuntu (`.deb`), Fedora (`.rpm`), Alpine (`.apk`) packages and Linux/Wind
 [releases page](https://github.com/hmsoft0815/GitPulseMLC/releases). **macOS** binaries — signed and notarized — are on
 [mlcgo.eu](https://mlcgo.eu/products/gitpulse/); `install.sh` fetches them from there.
 
-**2. Tell gitpulse where your repositories are**
+**2. Tell gitpulse which repositories to watch**
 
 ```bash
-gitpulse init ~/code          # finds every Git repository below ~/code
-gitpulse init ~/work          # run again to add more folders
+gitpulse add ~/code           # every Git repository below ~/code
+gitpulse add                  # just the repository you are in
 ```
 
 This writes `~/.gitpulsemlc/repos.ini`. Use `--dry-run` to see what would be added first.
+[Managing projects](#managing-projects) explains ignoring, third-party repositories and more.
 
 **3. Look**
 
@@ -93,6 +94,54 @@ gitpulse                      # all repositories
 gitpulse --compact            # only the ones that need attention
 gitpulse -v                   # plus every branch, its sync state and age
 ```
+
+## Managing projects
+
+```bash
+gitpulse add ~/code              # add every repository below a folder (or one: gitpulse add PATH)
+gitpulse ignore old-tool         # stop watching — by name or path, e.g. `gitpulse ignore .`
+gitpulse watch old-tool          # watch it again
+gitpulse mark whisper.cpp 3rd    # someone else's repository (`own` makes it yours again)
+gitpulse list                    # every project with kind and state
+```
+
+**Own or third party.** You often check out other people's repositories to look at or test them,
+and leave local changes there that will never go upstream. Mark them as third party:
+
+- they are listed in their own block at the end, with `3rd` in the REMOTE column;
+- local changes, local commits, stashes and stale branches there are muted hints, not "Action required";
+- they do not count as Dirty, Ahead, Behind or Public, and `--compact` hides them;
+- new upstream commits (`↓3`) still show — that is the one thing worth knowing about them.
+
+gitpulse sorts new repositories by itself once it knows which remotes are yours:
+
+```ini
+[settings]
+own_remotes = github.com/me, gitlab.com/my-group, git.example.com
+```
+
+An entry is a host (`git.example.com`) or a host and owner (`github.com/me`); `*` works within a segment.
+A repository is yours if any remote matches, if a remote is on your local network, or if it has no remote at all.
+Until `own_remotes` is set everything counts as yours, and `gitpulse add` lists the remote owners it found as a suggestion.
+`gitpulse mark --auto` sorts the projects you already have (try `--dry-run` first).
+
+**Ignored** projects are remembered, so `gitpulse add` never brings them back.
+`gitpulse ignore PATH` also works for a repository that is not in the config yet.
+
+The config has one section per state — plain ini, fine to edit by hand:
+
+```ini
+[projects]           # your own
+webshop = /home/me/code/webshop
+
+[third_party]        # checked out to look at or test
+whisper.cpp = /home/me/src/whisper.cpp
+
+[disabled_projects]  # ignored
+old-tool = /home/me/code/old-tool
+```
+
+Each name must be unique. If a name occurs twice, only the last entry is watched; gitpulse warns, and `gitpulse list` marks the other as `dup`.
 
 ## Typical uses
 
@@ -117,8 +166,14 @@ remote_gitpulse -host user@server -config server-repos.ini -arch linux-amd64
 ### Command line
 
 ```
-gitpulse [flags]                 show the status of all configured repositories
-gitpulse init [flags] [DIR ...]  find repositories below DIR and add them to the config
+gitpulse [flags]                       show the status of all watched repositories
+gitpulse add [flags] [PATH|DIR ...]    add a repository, or every one below a folder (alias: init)
+gitpulse ignore NAME|PATH ...          stop watching, but remember
+gitpulse watch NAME|PATH ...           watch an ignored project again
+gitpulse mark NAME|PATH ... own|3rd    your own project or third party
+gitpulse mark --auto [--dry-run]       sort own projects by own_remotes
+gitpulse list                          every project with kind and state
+gitpulse COMMAND --help                flags of a command
 
 Flags:
   --compact      only repositories that need action
@@ -133,14 +188,15 @@ Flags:
   --config PATH  use this config file
   --version      print the version
 
-init flags:
+add flags:
   --depth N      how many directory levels to search (default 4)
   --dry-run      only list what would be added
+  --own, --3rd   add as own / third party, whatever the remote
   --config PATH  config file to create or extend
 ```
 
-`init` skips hidden folders, `node_modules` and `vendor`, and does not look inside a repository it has found.
-Projects already in the config — enabled or disabled — are never added twice.
+`add` skips hidden folders, `node_modules` and `vendor`, and does not look inside a repository it has found.
+Projects already in the config — watched or ignored — are never added twice. Flags may follow the paths.
 
 ### Configuration
 
@@ -163,6 +219,11 @@ show_summary = true
 compact_mode = false
 # hosts that are private although they look external (glob patterns)
 private_hosts = git.example.com, *.corp.example
+# your remotes; repositories elsewhere are added as third party
+own_remotes = github.com/me, git.example.com
+
+[third_party]
+whisper.cpp = /home/me/src/whisper.cpp
 
 [disabled_projects]
 # moved here: not scanned, but remembered

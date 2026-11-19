@@ -21,7 +21,7 @@ func loadConfigOrExplain(explicit string) *config.Config {
 	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		fmt.Fprintf(os.Stderr, "Config file not found: %s\n\n", path)
-		fmt.Fprintf(os.Stderr, "Create it with:\n  gitpulse init --config %s <DIR>\n", path)
+		fmt.Fprintf(os.Stderr, "Create it with:\n  gitpulse add --config %s <DIR>\n", path)
 		os.Exit(1)
 	}
 
@@ -32,7 +32,7 @@ func loadConfigOrExplain(explicit string) *config.Config {
 	}
 	if len(cfg.Projects) == 0 {
 		fmt.Fprintf(os.Stderr, "No repositories configured in %s.\n\n", path)
-		fmt.Fprintf(os.Stderr, "Add some with:\n  gitpulse init <DIR>     e.g. gitpulse init ~/code\n")
+		fmt.Fprintf(os.Stderr, "Add some with:\n  gitpulse add <DIR>     e.g. gitpulse add ~/code\n")
 		os.Exit(1)
 	}
 	return cfg
@@ -50,8 +50,10 @@ It needs to know which repositories to watch — there is no config yet.
 
 Quickest start: let gitpulse find your repositories.
 
-  gitpulse init ~/code        search ~/code and save what it finds
+  gitpulse add ~/code         search ~/code and save what it finds
   gitpulse                    show the status
+
+Later: gitpulse ignore NAME, gitpulse mark NAME 3rd, gitpulse list — see gitpulse --help.
 
 Or write the config by hand: %s
 

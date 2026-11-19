@@ -30,6 +30,10 @@ func TestStatusCell(t *testing.T) {
 		{"stash", gitmonitor.RepoStatus{IsClean: true, StashCount: 1}, "1 stash", true},
 		{"stale is info only", gitmonitor.RepoStatus{IsClean: true, LocalBranches: []gitmonitor.BranchInfo{{IsStale: true}}}, "CLEAN 1 stale", false},
 		{"no remote is shown in the REMOTE column", gitmonitor.RepoStatus{IsClean: true, HasNoRemote: true}, "CLEAN", false},
+		{"third-party work is only a hint", gitmonitor.RepoStatus{ThirdParty: true, ChangedFiles: map[string]int{".go": 1}, StashCount: 1,
+			LocalBranches: []gitmonitor.BranchInfo{{Ahead: 2}}}, "DIRTY (1.go) ↑2 1 stash", false},
+		{"third-party upstream update counts", gitmonitor.RepoStatus{ThirdParty: true, IsClean: true,
+			LocalBranches: []gitmonitor.BranchInfo{{Behind: 4}}}, "↓4", true},
 		{"submodule pointer is info only", gitmonitor.RepoStatus{IsClean: true, Submodules: []gitmonitor.SubmoduleInfo{
 			{Path: ".mlcai", RecordedCommit: "a", CurrentCommit: "b", Status: &gitmonitor.RepoStatus{IsClean: true}},
 		}}, "CLEAN 1 sub-ptr", false},
