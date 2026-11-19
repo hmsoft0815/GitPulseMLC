@@ -10,7 +10,7 @@ All notable changes to GitPulseMLC. Details and reasoning live in the project do
 - `stat_check = minimal` makes scans of checkouts shared with Windows git about ten times faster.
 
 ### Changed
-- gitpulse asks git for the worktree and branch state when git is installed: up to 40 times faster on large or slow drives.
+- gitpulse asks git for the worktree and branch state when git is installed: about ten times faster, up to 40 times on slow drives.
 - The status now honours `.gitattributes`, `core.autocrlf` and `core.filemode` exactly like `git status`.
 
 ### Fixed
