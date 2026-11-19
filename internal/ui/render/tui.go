@@ -13,6 +13,7 @@ import (
 	"github.com/hmsoft0815/GitPulseMLC/pkg/gitmonitor"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // TUIOptions control the terminal output.
@@ -36,9 +37,7 @@ func TUI(w io.Writer, results []*gitmonitor.RepoStatus, summary gitmonitor.Summa
 	for _, r := range rows {
 		if r.status.ThirdParty && !thirdPartyShown {
 			thirdPartyShown = true
-			fmt.Fprintln(w)
-			fmt.Fprintln(w, fit(styles.Header.Render("THIRD PARTY")+" "+
-				styles.Muted.Render("— checked out to look at or test; local changes are only hints"), opts.Width))
+			writeThirdPartyHeading(w, opts.Width)
 		}
 		writeRow(w, layout, r, cols, opts.Width)
 		if opts.Details && r.status.ErrorMsg == "" {
@@ -48,6 +47,22 @@ func TUI(w io.Writer, results []*gitmonitor.RepoStatus, summary gitmonitor.Summa
 
 	if cfg.Settings.ShowSummary {
 		writeSummary(w, summary, len(rows), cfg.Settings.CompactMode, opts.Width)
+	}
+}
+
+// writeThirdPartyHeading starts the third-party block. In a narrow terminal
+// the explanation moves below the heading and wraps instead of being cut.
+func writeThirdPartyHeading(w io.Writer, width int) {
+	heading := styles.Header.Render("THIRD PARTY")
+	note := "checked out to look at or test; local changes are only hints"
+	fmt.Fprintln(w)
+	if width <= 0 || lipgloss.Width(heading)+3+len(note) <= width {
+		fmt.Fprintln(w, heading+" "+styles.Muted.Render("— "+note))
+		return
+	}
+	fmt.Fprintln(w, heading)
+	for _, line := range strings.Split(ansi.Wrap(note, width, " "), "\n") {
+		fmt.Fprintln(w, styles.Muted.Render(line))
 	}
 }
 

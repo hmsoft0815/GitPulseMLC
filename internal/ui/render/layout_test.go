@@ -116,3 +116,21 @@ func TestDetailsStashIsNotTheLastBranch(t *testing.T) {
 		t.Errorf("stash detail line should use ├─:\n%s", text)
 	}
 }
+
+func TestThirdPartyHeadingWraps(t *testing.T) {
+	lipgloss.SetColorProfile(termenv.Ascii)
+	results := []*gitmonitor.RepoStatus{{Name: "whisper.cpp", Path: "/src/whisper.cpp", CurrentBranch: "main", IsClean: true, ThirdParty: true}}
+	for _, width := range []int{0, 100, 60, 40} {
+		var buf bytes.Buffer
+		TUI(&buf, results, gitmonitor.Summary{}, &config.Config{}, TUIOptions{Width: width})
+		text := buf.String()
+		if strings.Contains(text, "…") || !strings.Contains(text, "only hints") {
+			t.Errorf("width %d: heading cut or incomplete:\n%s", width, text)
+		}
+		for _, l := range strings.Split(text, "\n") {
+			if width > 0 && lipgloss.Width(l) > width {
+				t.Errorf("width %d: line %q is too wide", width, l)
+			}
+		}
+	}
+}
