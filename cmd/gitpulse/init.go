@@ -147,7 +147,8 @@ func saveFound(out io.Writer, m *config.Manager, projects []config.Project, tota
 		return err
 	}
 	fmt.Fprintf(out, "\nSaved to %s\n", tildePath(m.Path, home))
-	fmt.Fprintf(out, "Next: run `gitpulse` — `gitpulse ignore NAME` stops watching one, `gitpulse mark NAME 3rd` marks it third party.\n")
+	fmt.Fprintf(out, "Next: run `gitpulse`. `gitpulse ignore NAME` stops watching a project,\n")
+	fmt.Fprintf(out, "      `gitpulse mark NAME 3rd` marks it as third party.\n")
 	return nil
 }
 

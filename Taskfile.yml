@@ -56,6 +56,17 @@ tasks:
       - rm -f "{{.PREFIX}}/bin/gitpulse" "{{.PREFIX}}/share/man/man1/gitpulse.1"
       - echo "Removed gitpulse from {{.PREFIX}}; your config ~/.gitpulsemlc/ is untouched"
 
+  screenshots:
+    desc: Render the product page screenshots from real output of a demo setup (OUT=dist/screenshots)
+    deps: [build]
+    vars:
+      OUT: '{{.OUT | default "dist/screenshots"}}'
+    preconditions:
+      - sh: command -v jq && command -v python3 && command -v perl
+        msg: "needs jq, python3 and perl (chromium optional, for the HTML report)"
+    cmds:
+      - scripts/screenshots/make.sh bin/gitpulse{{exeExt}} "{{.OUT}}"
+
   build:remote:
     desc: Build the remote execution utility (bin/remote_gitpulse)
     cmds:
