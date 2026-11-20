@@ -50,7 +50,7 @@ func TestScanHostReadsRemoteJSON(t *testing.T) {
 		{Name: "lightcraft", Path: "/mnt/c/development/lightcraft", EOLOnlyCount: 3, ChangedFiles: map[string]int{}},
 		{Name: "whisper.cpp", Path: "/mnt/c/development/whisper.cpp", ThirdParty: true, IsClean: true},
 	})
-	got := startHosts([]config.Host{h}, true, 10*time.Second)()
+	got := startHosts([]config.Host{h}, true, 10*time.Second).wait(false)
 	if len(got) != 2 || got[0].Host != "win11" || got[1].Host != "win11" || got[0].EOLOnlyCount != 3 || !got[1].ThirdParty {
 		t.Fatalf("results = %+v", got)
 	}
@@ -77,7 +77,7 @@ func TestScanHostFailures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		start := time.Now()
-		got := startHosts([]config.Host{{Name: "win11", Command: tt.command}}, false, tt.timeout)()
+		got := startHosts([]config.Host{{Name: "win11", Command: tt.command}}, false, tt.timeout).wait(false)
 		if len(got) != 1 || got[0].Host != "win11" || !strings.Contains(got[0].ErrorMsg, tt.want) {
 			t.Errorf("%s: %+v, want one error containing %q", tt.name, got, tt.want)
 		}

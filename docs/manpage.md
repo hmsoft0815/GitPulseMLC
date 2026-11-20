@@ -32,7 +32,7 @@ Windows Defender or other antivirus tools might flag the generated binary as sus
 *   **--layout auto|wide|narrow|stacked**: Table layout. **auto** (default) fits the terminal: **wide** shows every column, **narrow** drops PATH and shortens long branch names, **stacked** shows two lines per repository (name and status; branch, remote and path). A long status wraps within its column. When the output is not a terminal it is always wide and never cut. **$COLUMNS** overrides the detected terminal width.
 *   **--backend auto|git|go-git**: How to read repositories; overrides the **backend** setting.
 *   **--offline**: Do not check online whether remotes are public; use cached results only.
-*   **--progress**: Show a real-time scanning progress indicator on stderr.
+*   **--progress**: Show a real-time scanning progress indicator on stderr, then the hosts from **[hosts]** that are still running, with the seconds waited.
 *   **--html**: Output results as a standalone, high-contrast HTML report.
 *   **--json**: Output results in JSON format.
 *   **--no-color**: Disable ANSI color output.

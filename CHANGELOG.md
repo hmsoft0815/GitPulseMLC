@@ -6,6 +6,7 @@ All notable changes to GitPulseMLC. Details and reasoning live in the project do
 
 ### Added
 - `backend = auto | git | go-git` (and `--backend`) chooses how repositories are read; `go-git` never calls git.
+- `--progress` shows which hosts from `[hosts]` are still running and for how long, instead of a silent wait.
 
 ### Fixed
 - Without git, ahead/behind and incoming commits were 0 in shallow clones.

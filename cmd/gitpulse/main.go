@@ -137,12 +137,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	waitHosts := startHosts(cfg.Hosts, *offline, cfg.Settings.HostTimeout)
-	allResults := scanProjects(scanner, cfg.Projects, *jobs, *showProgress && !isReportMode)
+	progress := *showProgress && !isReportMode
+	hostScans := startHosts(cfg.Hosts, *offline, cfg.Settings.HostTimeout)
+	allResults := scanProjects(scanner, cfg.Projects, *jobs, progress)
 	markThirdParty(allResults, cfg.ThirdParty)
 	checkVisibility(allResults, cfg.Settings, *offline)
 	// Remote hosts checked visibility and third party themselves.
-	allResults = append(allResults, waitHosts()...)
+	allResults = append(allResults, hostScans.wait(progress)...)
 	orderResults(allResults, cfg.Hosts)
 	if *publicOnly {
 		allResults = onlyPublic(allResults)
