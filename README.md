@@ -5,6 +5,8 @@
 **One command shows which of your local Git repositories still need attention:**
 uncommitted changes, unpushed commits, forgotten stashes and stale branches —
 and which of them anyone on the internet can read.
+It also keeps an eye on the projects you only cloned to use or try: which of them have new commits upstream —
+[time to pull?](#managing-projects)
 GitPulse only reads your repositories — it never commits, fetches, pulls or pushes.
 Its one network request is an anonymous check whether a remote is public (`--offline` skips it) —
 plus the commands you list under `[hosts]` to include [other machines](#other-machines).
@@ -62,7 +64,8 @@ Results are cached for 7 days in the user cache directory (`~/.cache/gitpulse/vi
 - You work on **10+ repositories** on one machine or server.
 - You have lost work because a commit **never got pushed** before switching laptops.
 - You want a daily **"what's still open?" report** by mail, cron or CI.
-- You check out **other people's projects** to try them and want their local changes kept apart from yours.
+- You follow **other people's projects** — tools you build from source, libraries you test — and want to know
+  when a pull is due, without their local patches mixing with your to-do list.
 - You want to know at a glance which repositories are **public**.
 
 If you only ever work in one repository, `git status` is enough.
@@ -121,8 +124,20 @@ and leave local changes there that will never go upstream. Mark them as third pa
 - they do not count as Dirty, Ahead, Behind or Public, and `--compact` hides them;
 - new upstream commits (`↓3`) still show — that is the one thing worth knowing about them.
 
-**Has upstream moved on?** That is the question for a repository you only cloned to test. gitpulse never fetches,
-so `↓3` reflects your last `git fetch`. Fetch the third-party checkouts, then look:
+**Time to pull?** That is the question for a repository you only cloned to use or test, and with a dozen of them
+nobody checks each one by hand. The third-party block answers it in one look:
+
+```
+THIRD PARTY — checked out to look at or test; local changes are only hints
+open-webui     main   github 3rd   DIRTY (6.md) ↓6052
+whisper.cpp    HEAD   github 3rd   ↓1690
+memos          main   github 3rd   1 stash
+```
+
+`↓1690` means upstream has moved on by 1690 commits since your checkout — pull, or at least read the changelog. Your own
+patches (`DIRTY`, stashes) stay muted, because they are not a to-do. This works for clones on [other machines](#other-machines)
+too, each in its own host block. gitpulse never fetches, so `↓3` reflects your last `git fetch`. Fetch the third-party
+checkouts, then look:
 
 ```bash
 gitpulse --json | jq -r '.results[] | select(.third_party) | .path' |
@@ -133,7 +148,7 @@ gitpulse --compact     # a third-party repository now shows up only if upstream 
 gitpulse --json | jq -r '.results[] | select(.third_party and .behind > 0) | "\(.name): \(.behind) new — \(.incoming_commits[0])"'
 ```
 
-Put the first two lines in a weekly cron job and you notice new releases of the tools you are evaluating.
+Put the first two lines in a weekly cron job and you notice new releases of the tools you use or evaluate.
 
 gitpulse sorts new repositories by itself once it knows which remotes are yours:
 

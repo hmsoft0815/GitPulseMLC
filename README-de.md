@@ -5,6 +5,8 @@
 **Ein Befehl zeigt dir, in welchem deiner lokalen Git-Repositories noch etwas offen ist:**
 nicht committete Änderungen, nicht gepushte Commits, vergessene Stashes und verwaiste Branches —
 und welche davon jeder im Internet lesen kann.
+Dazu behält es die Projekte im Blick, die du nur zum Nutzen oder Ausprobieren geklont hast: Bei welchen gibt es upstream
+neue Commits — [sollte ich neu pullen?](#projekte-verwalten)
 GitPulse liest nur — es committet, fetcht, pullt und pusht nie.
 Einzige Netzwerkanfrage ist eine anonyme Prüfung, ob ein Remote öffentlich ist (`--offline` lässt sie weg) —
 dazu die Befehle, die du unter `[hosts]` für [andere Rechner](#andere-rechner) einträgst.
@@ -62,7 +64,8 @@ Das Ergebnis wird 7 Tage im Cache-Verzeichnis des Benutzers gehalten (unter Linu
 - Du arbeitest an **10 oder mehr Repositories** auf einem Rechner oder Server.
 - Dir ist schon Arbeit verloren gegangen, weil ein Commit **nie gepusht** wurde.
 - Du willst einen täglichen **„Was ist noch offen?“-Bericht** per Mail, Cron oder CI.
-- Du checkst **fremde Projekte** zum Ausprobieren aus und willst deren lokale Änderungen von deinen getrennt sehen.
+- Du verfolgst **fremde Projekte** — Tools, die du aus dem Quellcode baust, Bibliotheken, die du testest — und willst
+  wissen, wann ein Pull fällig ist, ohne dass ihre lokalen Anpassungen in deiner To-do-Liste landen.
 - Du willst auf einen Blick sehen, welche Repositories **öffentlich** sind.
 
 Wer nur in einem Repository arbeitet, kommt mit `git status` aus.
@@ -121,8 +124,20 @@ und hast dort lokale Änderungen, die nie upstream gehen sollen. Markiere sie al
 - sie zählen nicht bei Dirty, Ahead, Behind oder Public, und `--compact` blendet sie aus;
 - neue Commits upstream (`↓3`) bleiben sichtbar — das ist bei ihnen das Einzige, was zählt.
 
-**Hat sich upstream etwas getan?** Das ist die Frage bei einem Repository, das du nur zum Testen geklont hast. gitpulse
-fetcht nie, `↓3` zeigt also den Stand deines letzten `git fetch`. Fetche die 3rd-party-Checkouts, dann schau hin:
+**Sollte ich neu pullen?** Das ist die Frage bei einem Repository, das du nur zum Nutzen oder Testen geklont hast — und
+bei einem Dutzend davon prüft das niemand einzeln von Hand. Der 3rd-party-Block beantwortet sie auf einen Blick:
+
+```
+THIRD PARTY — checked out to look at or test; local changes are only hints
+open-webui     main   github 3rd   DIRTY (6.md) ↓6052
+whisper.cpp    HEAD   github 3rd   ↓1690
+memos          main   github 3rd   1 stash
+```
+
+`↓1690` heißt: upstream ist seit deinem Checkout 1690 Commits weiter — pullen, oder wenigstens ins Changelog schauen. Deine
+eigenen Anpassungen (`DIRTY`, Stashes) bleiben gedämpft, denn sie sind kein To-do. Das gilt auch für Klone auf
+[anderen Rechnern](#andere-rechner), jeweils im eigenen Host-Block. gitpulse fetcht nie, `↓3` zeigt also den Stand deines
+letzten `git fetch`. Fetche die 3rd-party-Checkouts, dann schau hin:
 
 ```bash
 gitpulse --json | jq -r '.results[] | select(.third_party) | .path' |
@@ -133,7 +148,7 @@ gitpulse --compact     # ein 3rd-party-Repository erscheint jetzt nur, wenn es u
 gitpulse --json | jq -r '.results[] | select(.third_party and .behind > 0) | "\(.name): \(.behind) neu — \(.incoming_commits[0])"'
 ```
 
-Die ersten beiden Zeilen als wöchentlicher Cron-Job, und du merkst neue Versionen der Tools, die du gerade ausprobierst.
+Die ersten beiden Zeilen als wöchentlicher Cron-Job, und du merkst neue Versionen der Tools, die du nutzt oder ausprobierst.
 
 gitpulse sortiert neue Repositories selbst ein, sobald es weiß, welche Remotes deine sind:
 
