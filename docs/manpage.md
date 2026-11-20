@@ -30,6 +30,7 @@ Windows Defender or other antivirus tools might flag the generated binary as sus
 *   **--jobs N**: Scan up to N repositories in parallel (default: one per CPU). Lower it on slow disks.
 *   **--public**: Only show repositories with a publicly readable remote.
 *   **--layout auto|wide|narrow|stacked**: Table layout. **auto** (default) fits the terminal: **wide** shows every column, **narrow** drops PATH and shortens long branch names, **stacked** shows two lines per repository (name and status; branch, remote and path). A long status wraps within its column. When the output is not a terminal it is always wide and never cut. **$COLUMNS** overrides the detected terminal width.
+*   **--backend auto|git|go-git**: How to read repositories; overrides the **backend** setting.
 *   **--offline**: Do not check online whether remotes are public; use cached results only.
 *   **--progress**: Show a real-time scanning progress indicator on stderr.
 *   **--html**: Output results as a standalone, high-contrast HTML report.
@@ -85,6 +86,7 @@ Each project name must be unique across all sections; of a name that occurs twic
 *   **compact_mode**: Enable compact mode by default (default: false).
 *   **layout**: Default for **--layout** (default: auto).
 *   **stat_check**: **full** (default) compares tracked files like `git status`; **minimal** compares only size and modification time — much faster on checkouts shared with Windows git (e.g. /mnt/c in WSL), but then shows what Windows git sees: line endings a Windows tool changed go unnoticed.
+*   **backend**: **auto** (default) uses the installed git and falls back to the built-in go-git without it; **git** requires git and stops with an error when it is missing; **go-git** never calls git — slower, and it may count more untracked files (e.g. inside a nested repository) than `git status`.
 *   **host_timeout**: Seconds a host from **[hosts]** may take (default: 180).
 *   **own_remotes**: Comma-separated remotes that are yours, as host (`git.example.com`) or host and owner (`github.com/me`); `*` matches within a segment. Repositories elsewhere are added as third party.
 *   **private_hosts**: Comma-separated glob patterns of Git hosts that count as local network and are never checked online.

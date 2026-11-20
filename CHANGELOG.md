@@ -2,6 +2,14 @@
 
 All notable changes to GitPulseMLC. Details and reasoning live in the project documentation.
 
+## Unreleased
+
+### Added
+- `backend = auto | git | go-git` (and `--backend`) chooses how repositories are read; `go-git` never calls git.
+
+### Fixed
+- Without git, ahead/behind and incoming commits were 0 in shallow clones.
+
 ## 1.6.0 — 2026-11-19
 
 ### Added

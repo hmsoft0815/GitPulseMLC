@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,12 +20,39 @@ import (
 // take a while, a hung mount must not block the scan forever.
 const gitStatusTimeout = 5 * time.Minute
 
-// gitBinary is the git executable, looked up once; "" if git is missing or
-// GITPULSE_NO_GIT is set.
-var gitBinary = sync.OnceValue(func() string {
-	if os.Getenv("GITPULSE_NO_GIT") != "" {
-		return ""
+// Backend selects how a scanner reads the worktree and branch state.
+type Backend string
+
+const (
+	// BackendAuto uses git when it is installed, otherwise go-git.
+	BackendAuto Backend = "auto"
+	// BackendGit uses the installed git: fast, and the result matches
+	// `git status` with the user's own git configuration.
+	BackendGit Backend = "git"
+	// BackendGoGit uses only the built-in go-git library: no dependency on
+	// an installed git, but slower, and it differs from git in corners such
+	// as repositories nested in a worktree or the global ignore file.
+	BackendGoGit Backend = "go-git"
+)
+
+// ParseBackend reads a backend name; "" means auto.
+func ParseBackend(s string) (Backend, error) {
+	switch b := Backend(strings.ToLower(strings.TrimSpace(s))); b {
+	case "":
+		return BackendAuto, nil
+	case BackendAuto, BackendGit, BackendGoGit:
+		return b, nil
 	}
+	return "", fmt.Errorf("unknown backend %q — use auto, git or go-git", s)
+}
+
+// GitInstalled reports whether a git executable is on the PATH.
+func GitInstalled() bool {
+	return gitBinary() != ""
+}
+
+// gitBinary is the git executable, looked up once; "" if git is missing.
+var gitBinary = sync.OnceValue(func() string {
 	p, err := exec.LookPath("git")
 	if err != nil {
 		return ""
@@ -32,13 +60,18 @@ var gitBinary = sync.OnceValue(func() string {
 	return p
 })
 
+// useGit reports whether this scanner asks git for the repository state.
+func (s *scanner) useGit() bool {
+	return s.opts.Backend != BackendGoGit && gitBinary() != ""
+}
+
 // worktreeStatus returns the worktree status of the repository at dir.
-// It asks git when it is installed: git uses its index cache, honours
+// With useGit it asks git: git uses its index cache, honours
 // .gitattributes, core.autocrlf and core.filemode, and is many times faster
-// than go-git on large or slow file systems (e.g. /mnt/c in WSL). Without
-// git, or if git fails, go-git computes the status.
-func worktreeStatus(dir string, wt *git.Worktree, minimalStat bool) (git.Status, error) {
-	if dir != "" && gitBinary() != "" {
+// than go-git on large or slow file systems (e.g. /mnt/c in WSL). Otherwise,
+// or if git fails, go-git computes the status.
+func worktreeStatus(dir string, wt *git.Worktree, useGit, minimalStat bool) (git.Status, error) {
+	if dir != "" && useGit {
 		if st, err := gitCLIStatus(dir, minimalStat); err == nil {
 			return st, nil
 		}

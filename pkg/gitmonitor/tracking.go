@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"sort"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -17,9 +18,6 @@ import (
 
 // maxIncoming limits how many incoming commit subjects are listed.
 const maxIncoming = 10
-
-// errStop ends a commit walk early.
-var errStop = errors.New("stop")
 
 // upstream returns the remote-tracking reference of a local branch and its
 // short name ("origin/main"), or nil if the branch tracks nothing that was
@@ -71,33 +69,41 @@ func (s *scanner) getAheadBehindForBranch(repo *git.Repository, ref *plumbing.Re
 	return s.aheadBehind(repo, ref.Hash(), remote.Hash())
 }
 
-// mergeBase returns the first common ancestor of a and b.
-func mergeBase(repo *git.Repository, a, b plumbing.Hash) (plumbing.Hash, error) {
-	ca, err := repo.CommitObject(a)
-	if err != nil {
-		return plumbing.ZeroHash, err
-	}
-	cb, err := repo.CommitObject(b)
-	if err != nil {
-		return plumbing.ZeroHash, err
-	}
-	bases, err := ca.MergeBase(cb)
-	if err != nil || len(bases) == 0 {
-		return plumbing.ZeroHash, fmt.Errorf("no merge base: %w", err)
-	}
-	return bases[0].Hash, nil
-}
-
 // aheadBehind counts the commits local has that remote lacks (ahead) and the
-// other way round (behind), measured from their merge base.
+// other way round (behind) — what `git rev-list --count` reports. Comparing
+// the two ancestor sets needs no merge base, so it also works after merges
+// and in shallow clones.
 func (s *scanner) aheadBehind(repo *git.Repository, local, remote plumbing.Hash) (int, int, error) {
-	base, err := mergeBase(repo, local, remote)
-	if err != nil {
+	if local == remote {
 		return 0, 0, nil
 	}
-	ahead, _ := s.countCommitsBetween(repo, base, local)
-	behind, _ := s.countCommitsBetween(repo, base, remote)
-	return ahead, behind, nil
+	mine, err := ancestors(repo, local)
+	if err != nil {
+		return 0, 0, err
+	}
+	theirs, err := ancestors(repo, remote)
+	if err != nil {
+		return 0, 0, err
+	}
+	return countMissing(mine, theirs), countMissing(theirs, mine), nil
+}
+
+// countCommitsBetween returns how many commits are reachable from to but
+// not from from.
+func (s *scanner) countCommitsBetween(repo *git.Repository, from, to plumbing.Hash) (int, error) {
+	_, n, err := s.aheadBehind(repo, from, to)
+	return n, err
+}
+
+// countMissing counts the commits of a that b does not contain.
+func countMissing(a, b map[plumbing.Hash]*object.Commit) int {
+	n := 0
+	for h := range a {
+		if _, ok := b[h]; !ok {
+			n++
+		}
+	}
+	return n
 }
 
 // incoming lists the subjects of up to maxIncoming commits on remote that
@@ -107,64 +113,72 @@ func (s *scanner) incoming(repo *git.Repository, local, remote plumbing.Hash) []
 	if err != nil {
 		return nil
 	}
-	iter, err := repo.Log(&git.LogOptions{From: remote, Order: git.LogOrderCommitterTime})
+	theirs, err := ancestors(repo, remote)
 	if err != nil {
 		return nil
 	}
-	defer iter.Close()
-	var subjects []string
-	_ = iter.ForEach(func(c *object.Commit) error {
-		if len(subjects) == maxIncoming {
-			return errStop
+	var missing []*object.Commit
+	for h, c := range theirs {
+		if _, ok := have[h]; !ok {
+			missing = append(missing, c)
 		}
-		if !have[c.Hash] {
-			subject, _, _ := strings.Cut(strings.TrimSpace(c.Message), "\n")
-			subjects = append(subjects, subject)
+	}
+	// Newest first; for commits made in the same second, children before
+	// their parents, as git log shows them.
+	depth := map[plumbing.Hash]int{}
+	var depthOf func(c *object.Commit) int
+	depthOf = func(c *object.Commit) int {
+		if d, ok := depth[c.Hash]; ok {
+			return d
 		}
-		return nil
+		depth[c.Hash] = 0 // guards against cycles in a broken repository
+		d := 0
+		for _, p := range c.ParentHashes {
+			if pc, ok := theirs[p]; ok {
+				d = max(d, depthOf(pc)+1)
+			}
+		}
+		depth[c.Hash] = d
+		return d
+	}
+	sort.Slice(missing, func(i, j int) bool {
+		a, b := missing[i], missing[j]
+		if !a.Committer.When.Equal(b.Committer.When) {
+			return a.Committer.When.After(b.Committer.When)
+		}
+		return depthOf(a) > depthOf(b)
 	})
+	var subjects []string
+	for _, c := range missing[:min(len(missing), maxIncoming)] {
+		subject, _, _ := strings.Cut(strings.TrimSpace(c.Message), "\n")
+		subjects = append(subjects, subject)
+	}
 	return subjects
 }
 
-// countCommitsBetween returns how many commits are reachable from to but
-// not from from. Walking back from to until from is first seen would stop
-// too early after a merge: the other side of the merge would be missed.
-func (s *scanner) countCommitsBetween(repo *git.Repository, from, to plumbing.Hash) (int, error) {
-	if from == to {
-		return 0, nil
-	}
-	have, err := ancestors(repo, from)
-	if err != nil {
-		return 0, err
-	}
-	iter, err := repo.Log(&git.LogOptions{From: to})
-	if err != nil {
-		return 0, err
-	}
-	defer iter.Close()
-	count := 0
-	err = iter.ForEach(func(c *object.Commit) error {
-		if !have[c.Hash] {
-			count++
+// ancestors returns h and every commit reachable from it. Parents missing
+// from the repository — the boundary of a shallow clone — end the walk
+// there, as they do for git; only a missing h itself is an error.
+func ancestors(repo *git.Repository, h plumbing.Hash) (map[plumbing.Hash]*object.Commit, error) {
+	seen := map[plumbing.Hash]*object.Commit{}
+	stack := []plumbing.Hash{h}
+	for len(stack) > 0 {
+		next := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		if _, ok := seen[next]; ok {
+			continue
 		}
-		return nil
-	})
-	return count, err
-}
-
-// ancestors returns h and every commit reachable from it.
-func ancestors(repo *git.Repository, h plumbing.Hash) (map[plumbing.Hash]bool, error) {
-	iter, err := repo.Log(&git.LogOptions{From: h})
-	if err != nil {
-		return nil, err
+		c, err := repo.CommitObject(next)
+		if errors.Is(err, plumbing.ErrObjectNotFound) && next != h {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		seen[next] = c
+		stack = append(stack, c.ParentHashes...)
 	}
-	defer iter.Close()
-	seen := map[plumbing.Hash]bool{}
-	err = iter.ForEach(func(c *object.Commit) error {
-		seen[c.Hash] = true
-		return nil
-	})
-	return seen, err
+	return seen, nil
 }
 
 // gitDirStat looks up a file in the repository's Git directory, which works

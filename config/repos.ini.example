@@ -45,6 +45,11 @@ compact_mode = false
 # sees — line endings a Windows tool changed are not noticed.
 # stat_check = full
 
+# How gitpulse reads repositories: auto (default) uses the installed git and
+# falls back to the built-in go-git; git requires git; go-git never calls git
+# (slower, and nested repositories count as untracked files).
+# backend = auto
+
 # Seconds a host from [hosts] may take before it shows as an error.
 # host_timeout = 180
 

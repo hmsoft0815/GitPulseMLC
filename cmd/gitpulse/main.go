@@ -73,6 +73,7 @@ func main() {
 	offline := flag.Bool("offline", false, "Do not check online whether remotes are public; use cached results")
 	publicOnly := flag.Bool("public", false, "Only show repositories with a publicly readable remote")
 	layoutFlag := flag.String("layout", "", "Table layout: auto (fit the terminal), wide, narrow or stacked")
+	backendFlag := flag.String("backend", "", "How to read repositories: auto (git if installed), git or go-git")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "GitPulseMLC  - Monitor the heartbeat of your local Git repositories\n\n")
@@ -132,7 +133,7 @@ func main() {
 		log.Fatal(err)
 	}
 	isReportMode := *jsonOutput || *htmlOutput
-	scanner, err := newScanner(cfg.Settings)
+	scanner, err := newScanner(cfg.Settings, *backendFlag)
 	if err != nil {
 		log.Fatal(err)
 	}

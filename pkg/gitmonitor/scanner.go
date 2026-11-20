@@ -30,8 +30,10 @@ type Options struct {
 	// tracked files (core.checkStat=minimal). Much faster on checkouts shared
 	// with Windows (e.g. /mnt/c in WSL), whose index git would otherwise never
 	// trust; but it then reports what Windows git sees — files whose line
-	// endings a Windows tool changed look unchanged.
+	// endings a Windows tool changed look unchanged. Only applies to git.
 	MinimalStat bool
+	// Backend chooses git or go-git; the zero value means BackendAuto.
+	Backend Backend
 }
 
 // NewScanner creates and returns a new instance of a GitScanner.
@@ -124,7 +126,7 @@ func (s *scanner) scanRepo(status *RepoStatus, repo *git.Repository) (*RepoStatu
 		return status, nil
 	}
 
-	wtStatus, err := worktreeStatus(status.Path, wt, s.opts.MinimalStat)
+	wtStatus, err := worktreeStatus(status.Path, wt, s.useGit(), s.opts.MinimalStat)
 	if err != nil {
 		status.Error = fmt.Errorf("failed to get status: %w", err)
 		status.ErrorMsg = status.Error.Error()
@@ -156,7 +158,7 @@ func (s *scanner) scanRepo(status *RepoStatus, repo *git.Repository) (*RepoStatu
 // branch, through git when it is installed (one call instead of a history
 // walk per branch), otherwise with go-git.
 func (s *scanner) branchState(repo *git.Repository, head *plumbing.Reference, status *RepoStatus) {
-	if status.Path != "" && gitBinary() != "" {
+	if status.Path != "" && s.useGit() {
 		if branches, err := gitBranches(status.Path); err == nil {
 			status.LocalBranches = make([]BranchInfo, 0, len(branches))
 			for _, b := range branches {

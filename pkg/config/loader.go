@@ -32,6 +32,8 @@ type Settings struct {
 	// StatCheck is "full" (default, like git status) or "minimal": git then
 	// compares only size and mtime — for checkouts shared with Windows git.
 	StatCheck string
+	// Backend is "auto" (default: git when installed), "git" or "go-git".
+	Backend string
 	// HostTimeout bounds how long a remote host may take (default 180 s).
 	HostTimeout time.Duration
 }
@@ -115,6 +117,7 @@ func (m *Manager) Load() (*Config, error) {
 		settings.OwnRemotes = splitList(setSection.Key("own_remotes").String())
 		settings.Layout = setSection.Key("layout").String()
 		settings.StatCheck = setSection.Key("stat_check").String()
+		settings.Backend = setSection.Key("backend").String()
 		if secs, err := setSection.Key("host_timeout").Int(); err == nil && secs > 0 {
 			settings.HostTimeout = time.Duration(secs) * time.Second
 		}

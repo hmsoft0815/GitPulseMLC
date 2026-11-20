@@ -11,7 +11,7 @@ go get github.com/hmsoft0815/GitPulseMLC
 ## Core Packages
 
 ### 1. `gitmonitor`
-This is the main package for scanning repositories. It leverages `go-git` to perform deep analysis of local repositories without requiring the `git` binary.
+This is the main package for scanning repositories. It asks the installed `git` binary when there is one and falls back to the built-in `go-git` otherwise. `NewScannerWithOptions(gitmonitor.Options{Backend: gitmonitor.BackendGoGit})` never calls `git`; `BackendGit` and `BackendAuto` (the default) do.
 
 #### Key Features:
 *   **Dirty State Detection**: Identify modified, untracked, and deleted files.

@@ -192,6 +192,13 @@ Index, den Windows-git geschrieben hat, nicht trauen und liest jede Datei neu �
 git sieht dann aber, was Windows-git sieht: Dateien, die ein Windows-Tool mit CRLF neu geschrieben hat, wirken unverändert.
 Nimm es, wenn du mit Windows-git committest; bleib beim Standard, wenn du aus WSL committest.
 
+**Welches git.** gitpulse liest die Repositories mit dem installierten git: etwa 15-mal schneller als die eingebaute
+Bibliothek go-git, und das Ergebnis stimmt mit `git status` und deiner git-Konfiguration überein (globale Ignore-Datei,
+`core.autocrlf`, verschachtelte Repositories). Ohne git nimmt es go-git. `backend = go-git` (oder `--backend go-git`) ruft
+git nie auf; das ist langsamer und zählt unter Umständen mehr ungetrackte Dateien, etwa in einem Repository, das in einem
+anderen liegt. `backend = git` bricht mit einer Meldung ab, wenn git fehlt, statt auf go-git auszuweichen. `stat_check`
+gilt nur für git.
+
 `EOL (3)` markiert Dateien, die sich nur in den Zeilenenden unterscheiden — jede Zeile wirkt geändert, ein Commit würde aber nur
 CRLF und LF tauschen. Meist hat ein Windows-Tool sie in einen Checkout geschrieben, den Linux-git liest. Vor dem Commit
 `core.autocrlf` oder `.gitattributes` setzen.
@@ -246,6 +253,7 @@ Flags:
   --public       nur Repositories mit öffentlich lesbarem Remote
   --offline      nicht online prüfen, ob Remotes öffentlich sind; Ergebnisse aus dem Cache nehmen
   --layout L     Tabellen-Layout: auto (passt sich dem Terminal an, Standard), wide, narrow, stacked
+  --backend B    Repositories lesen mit git (installiert), go-git (eingebaut) oder auto (Standard)
   --progress     Scan-Fortschritt anzeigen (nur Terminal-Ausgabe)
   --json         JSON-Ausgabe (Schema: docs/json_schema.md)
   --html         kontrastreicher HTML-Bericht, z. B. für E-Mails
@@ -295,6 +303,8 @@ own_remotes = github.com/ich, git.example.com
 layout = auto
 # full (Standard, wie git status) oder minimal — siehe Andere Rechner
 stat_check = full
+# auto (Standard: git, wenn installiert), git oder go-git — siehe Welches git
+backend = auto
 # Sekunden, die ein Host aus [hosts] brauchen darf
 host_timeout = 180
 
@@ -360,7 +370,7 @@ wie `ls` und so aussagekräftig wie `git status`, für alle auf einmal.
 
 ### Credits
 
-- **Engine:** [go-git](https://github.com/go-git/go-git)
+- **Engine:** das installierte git, [go-git](https://github.com/go-git/go-git) eingebaut
 - **UI:** [Lip Gloss](https://github.com/charmbracelet/lipgloss)
 
 ## Lizenz

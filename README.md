@@ -192,6 +192,12 @@ that machine's config makes git compare only size and modification time, typical
 Windows git sees: files a Windows tool rewrote with CRLF look unchanged. Use it if you commit with Windows git; keep the
 default if you commit from WSL.
 
+**Which git.** gitpulse reads repositories with the git you have installed: about 15 times faster than the built-in go-git
+library, and the result matches `git status` with your git configuration (global ignore file, `core.autocrlf`, nested
+repositories). Without git it falls back to go-git. `backend = go-git` (or `--backend go-git`) never calls git; it is slower
+and may count more untracked files, e.g. inside a repository nested in another. `backend = git` stops with an error when
+git is missing instead of falling back. `stat_check` only applies to git.
+
 `EOL (3)` marks files that differ only in line endings — every line looks changed, but a commit would only swap CRLF and LF.
 Usually a Windows tool wrote them into a checkout Linux git reads. Set `core.autocrlf` or `.gitattributes` before committing.
 
@@ -245,6 +251,7 @@ Flags:
   --public       only repositories with a publicly readable remote
   --offline      do not check online whether remotes are public; use cached results
   --layout L     table layout: auto (fit the terminal, default), wide, narrow, stacked
+  --backend B    read repositories with git (installed), go-git (built in) or auto (default)
   --progress     show scanning progress (terminal output only)
   --json         JSON output (schema: docs/json_schema.md)
   --html         high-contrast HTML report, e.g. for e-mail
@@ -294,6 +301,8 @@ own_remotes = github.com/me, git.example.com
 layout = auto
 # full (default, like git status) or minimal — see Other machines
 stat_check = full
+# auto (default: git if installed), git or go-git — see Which git
+backend = auto
 # seconds a host from [hosts] may take
 host_timeout = 180
 
@@ -359,7 +368,7 @@ and as informative as `git status` — for all of them at once.
 
 ### Credits
 
-- **Engine:** [go-git](https://github.com/go-git/go-git)
+- **Engine:** your installed git, with [go-git](https://github.com/go-git/go-git) built in
 - **UI:** [Lip Gloss](https://github.com/charmbracelet/lipgloss)
 
 ## License

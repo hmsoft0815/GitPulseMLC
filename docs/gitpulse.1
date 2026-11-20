@@ -53,6 +53,9 @@ Only show repositories with a publicly readable remote.
 .BI \-\-layout " auto|wide|narrow|stacked"
 Table layout. auto (default) fits the terminal: wide shows every column, narrow drops PATH and shortens long branch names, stacked shows two lines per repository. A long status wraps within its column. Output that is not a terminal is always wide and never cut; $COLUMNS overrides the detected width.
 .TP
+.BI \-\-backend " auto|git|go-git"
+How to read repositories; overrides the backend setting.
+.TP
 .B \-\-offline
 Do not check online whether remotes are public; use cached results only.
 .TP
@@ -156,6 +159,8 @@ Each project name must be unique across all sections; of a name that occurs twic
 \fBlayout\fR: Default for \-\-layout (default: auto).
 .br
 \fBstat_check\fR: full (default) compares tracked files like git status; minimal compares only size and modification time \- much faster on checkouts shared with Windows git, but line endings a Windows tool changed go unnoticed.
+.br
+\fBbackend\fR: auto (default) uses the installed git and falls back to the built-in go-git; git requires git; go-git never calls git \- slower, and it may count more untracked files than git status.
 .br
 \fBhost_timeout\fR: Seconds a host from [hosts] may take (default: 180).
 .br

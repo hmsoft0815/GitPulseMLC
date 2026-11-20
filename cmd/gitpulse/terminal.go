@@ -35,15 +35,30 @@ func terminalWidth() int {
 	return w
 }
 
-// newScanner applies the stat_check setting: full (default) or minimal.
-func newScanner(settings config.Settings) (gitmonitor.GitScanner, error) {
+// newScanner applies the stat_check setting (full or minimal) and the
+// backend: --backend, else the backend setting, else auto.
+func newScanner(settings config.Settings, backendFlag string) (gitmonitor.GitScanner, error) {
+	var opts gitmonitor.Options
 	switch strings.ToLower(strings.TrimSpace(settings.StatCheck)) {
 	case "", "full":
-		return gitmonitor.NewScanner(), nil
 	case "minimal":
-		return gitmonitor.NewScannerWithOptions(gitmonitor.Options{MinimalStat: true}), nil
+		opts.MinimalStat = true
+	default:
+		return nil, fmt.Errorf("unknown stat_check %q — use full or minimal", settings.StatCheck)
 	}
-	return nil, fmt.Errorf("unknown stat_check %q — use full or minimal", settings.StatCheck)
+	name := settings.Backend
+	if backendFlag != "" {
+		name = backendFlag
+	}
+	backend, err := gitmonitor.ParseBackend(name)
+	if err != nil {
+		return nil, err
+	}
+	if backend == gitmonitor.BackendGit && !gitmonitor.GitInstalled() {
+		return nil, fmt.Errorf("backend git: no git executable found on the PATH — install git or use backend auto or go-git")
+	}
+	opts.Backend = backend
+	return gitmonitor.NewScannerWithOptions(opts), nil
 }
 
 // chooseLayout takes --layout, else the layout setting, else auto.

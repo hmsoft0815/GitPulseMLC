@@ -240,3 +240,52 @@ func TestBehindCountsBothSidesOfAMerge(t *testing.T) {
 		t.Errorf("incoming = %v, want 6 subjects", got)
 	}
 }
+
+// In a shallow clone the oldest commits have parents that are not in the
+// repository. The go-git fallback must count around them like git does
+// instead of giving up (it reported 0 behind for 131 waiting commits).
+func TestAheadBehindInShallowClone(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not installed")
+	}
+	root := t.TempDir()
+	up := filepath.Join(root, "up")
+	if err := os.Mkdir(up, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	gitRun(t, up, "init", "-q")
+	commit := func(dir, name string) {
+		writeFile(t, filepath.Join(dir, name), name+"\n")
+		gitRun(t, dir, "add", ".")
+		gitRun(t, dir, "commit", "-q", "-m", name)
+	}
+	for _, c := range []string{"a", "b", "c"} {
+		commit(up, c)
+	}
+	gitRun(t, root, "clone", "-q", "--depth", "1", "file://"+up, "clone")
+	clone := filepath.Join(root, "clone")
+	commit(clone, "mine")
+	for _, c := range []string{"d", "e", "f", "g"} {
+		commit(up, c)
+	}
+	gitRun(t, clone, "fetch", "-q")
+
+	repo, err := git.PlainOpen(clone)
+	if err != nil {
+		t.Fatal(err)
+	}
+	head, _ := repo.Head()
+	remote, _ := upstream(repo, head.Name().Short())
+	if remote == nil {
+		t.Fatal("no upstream")
+	}
+	s := &scanner{}
+	ahead, behind, err := s.aheadBehind(repo, head.Hash(), remote.Hash())
+	if err != nil || ahead != 1 || behind != 4 {
+		t.Errorf("aheadBehind = %d, %d, %v; want 1, 4", ahead, behind, err)
+	}
+	want := []string{"g", "f", "e", "d"}
+	if got := s.incoming(repo, head.Hash(), remote.Hash()); !reflect.DeepEqual(got, want) {
+		t.Errorf("incoming = %v, want %v", got, want)
+	}
+}
