@@ -2,11 +2,14 @@
 
 All notable changes to GitPulseMLC. Details and reasoning live in the project documentation.
 
-## Unreleased
+## 1.6.1 — 2026-11-20
 
 ### Added
 - `backend = auto | git | go-git` (and `--backend`) chooses how repositories are read; `go-git` never calls git.
 - `--progress` shows which hosts from `[hosts]` are still running and for how long, instead of a silent wait.
+
+### Changed
+- README and product page lead with the third-party question "time to pull?" and show what the block looks like.
 
 ### Fixed
 - Without git, ahead/behind and incoming commits were 0 in shallow clones.
