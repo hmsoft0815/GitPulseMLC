@@ -38,7 +38,9 @@ func fakeHost(t *testing.T, results []*gitmonitor.RepoStatus) (config.Host, stri
 		t.Fatal(err)
 	}
 	script := filepath.Join(dir, "gitpulse")
-	body := "#!/bin/sh\necho \"$@\" > " + argsFile + "\ncat " + jsonFile + "\n"
+	// Forward slashes and quotes: on Windows, sh would read the backslashes
+	// of C:\Users\... as escapes.
+	body := "#!/bin/sh\necho \"$@\" > '" + filepath.ToSlash(argsFile) + "'\ncat '" + filepath.ToSlash(jsonFile) + "'\n"
 	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -51,8 +53,11 @@ func TestScanHostReadsRemoteJSON(t *testing.T) {
 		{Name: "whisper.cpp", Path: "/mnt/c/development/whisper.cpp", ThirdParty: true, IsClean: true},
 	})
 	got := startHosts([]config.Host{h}, true, 10*time.Second).wait(false)
+	if len(got) == 1 && got[0].ErrorMsg != "" {
+		t.Fatalf("host failed: %s", got[0].ErrorMsg)
+	}
 	if len(got) != 2 || got[0].Host != "win11" || got[1].Host != "win11" || got[0].EOLOnlyCount != 3 || !got[1].ThirdParty {
-		t.Fatalf("results = %+v", got)
+		t.Fatalf("results = %+v %+v", got[0], got[len(got)-1])
 	}
 	args, _ := os.ReadFile(argsFile)
 	if strings.TrimSpace(string(args)) != "--json --offline" {
